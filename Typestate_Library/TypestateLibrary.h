@@ -94,7 +94,26 @@ struct find_transition<CST, NST, FunctionPointer, map_protocol<map_transition...
   
 };
 
-//analaysing the protocl
+//analysing the protocl
+  
+  
+  // fine defined class for the protocol 
+  
+template<typename T, typename...Args>
+struct unwrap_Class{
+    static_assert(!std::is_same_v<T, not_There>, "Class is not defind");
+  
+};
+  
+template<class T, typename... map_transition, typename... Args>
+struct unwrap_Class<assign_to_class<T,map_protocol<map_transition...>, Args...>>{
+    
+    using type = std::result_of_t< decltype(T)(Args...)>;
+    
+};
+
+  
+  
 template <typename T, typename... Args>
 struct unwrap_of_transition {
   static_assert(!std::is_same_v<T, not_There>, "Transition is not defind");
