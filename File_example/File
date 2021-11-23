@@ -1,0 +1,75 @@
+//
+//  File.cpp
+//  File_example
+//
+//  Created by Arwa Alsubhi on 23/11/2021.
+//
+
+#include <stdio.h>
+#include <iostream>
+#include<string.h>
+#include <fstream>
+#include "TypestateLibrary.h"
+
+using namespace std;
+class File{
+    string myfileName;
+    ifstream file;
+    string fileText;
+    
+public:
+    File(){
+        
+    }
+    void OpenFile(){
+        file.open(myfileName.c_str());
+        
+    }
+    void read(){
+        
+        while (getline (file, fileText) ){
+          // Output the text from the file
+          cout << fileText;
+        }
+        
+    }
+    void Close(){
+        file.close();
+    }
+    
+  
+};
+
+ enum class FileState{
+    INIT,
+    OPEN,
+    READ,
+    CLOSE,
+};
+
+
+using TypestateTool::map_transition;
+using TypestateTool::map_protocol;
+using TypestateTool::assign_to_class;
+
+
+ // define the protocol
+ 
+using File_protocol=  map_protocol<map_transition<FileState::INIT, FileState::OPEN, &File::OpenFile>,
+map_transition<FileState::OPEN,FileState::READ, &File::read>,
+map_transition<FileState::READ, FileState::CLOSE, &File::Close>
+>;
+
+
+// assign it to class
+ using ID= assign_to_class<File, File_protocol>;
+
+
+int main(int argc, const char * argv[]) {
+    // insert code here...
+    File file;
+    file.OpenFile();
+    file.read();
+    file.Close();
+    return 0;
+}
