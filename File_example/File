@@ -10,7 +10,6 @@
 #include<string.h>
 #include <fstream>
 #include "TypestateLibrary.h"
-
 using namespace std;
 class File{
     string myfileName;
@@ -27,10 +26,13 @@ public:
     }
     void read(){
         
-        while (getline (file, fileText) ){
-          // Output the text from the file
-          cout << fileText;
-        }
+       
+        if (getline(file, fileText)) cout << fileText;
+        
+    }
+    void ReadNext(){
+        
+        if (getline(file, fileText)) cout << fileText;
         
     }
     void Close(){
@@ -39,7 +41,6 @@ public:
     
   
 };
-
  enum class FileState{
     INIT,
     OPEN,
@@ -49,19 +50,21 @@ public:
 
 
 using TypestateTool::map_transition;
+using TypestateTool::map_Repeated_transition;
 using TypestateTool::map_protocol;
 using TypestateTool::assign_to_class;
 
 
- // define the protocol
+ // defined the protocol
  
 using File_protocol=  map_protocol<map_transition<FileState::INIT, FileState::OPEN, &File::OpenFile>,
 map_transition<FileState::OPEN,FileState::READ, &File::read>,
+map_transition<FileState::READ, FileState::READ, &File::ReadNext>,
 map_transition<FileState::READ, FileState::CLOSE, &File::Close>
 >;
-
-
 // assign it to class
+
+
  using ID= assign_to_class<File, File_protocol>;
 
 
@@ -70,6 +73,8 @@ int main(int argc, const char * argv[]) {
     File file;
     file.OpenFile();
     file.read();
+    file.ReadNext();
     file.Close();
     return 0;
 }
+
