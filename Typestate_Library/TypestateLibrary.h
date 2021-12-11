@@ -1,3 +1,5 @@
+
+
 //
 //  TypestateLibrary.h
 //  Typestate_C++
@@ -8,8 +10,6 @@
 #ifndef TypestateLibrary_h
 #define TypestateLibrary_h
 
-
-#endif /* TypestateLibrary_h */
 /*
  
  it is a Typestate Tool which makes the user able to write a program in C++ with typestate specification
@@ -17,8 +17,9 @@
  Therefore, a typestate tool will significantly facilitate and secure the
  user’s work by detecting any violations of the protocol that the user
  specifies for objects.
-
  */
+#endif /* TypestateLibrary_h */
+
 #include <utility>
 #include <cstdlib>
 
@@ -28,6 +29,7 @@
 #include<iostream>
 
 using namespace std;
+//using namespace std;
 
 
 
@@ -35,150 +37,186 @@ using namespace std;
 namespace TypestateTool{
   
  
- // to be used by users to store map transtioin form state to state for non repeated transtiopns
+ // to be used by users to store transtioin form state to state by using a pointer function in Map style format
  template <auto CST , auto NST, auto Pointer >
  struct map_transition;
 
+// swhich templatesto store transtioin
+template<class CST, class NST, auto Pointer, class State>
+void Swhich_Protocol(CST a , NST b, State s) {
+    switch(s){
+    case a:
+    Pointer->b;
+            break;
+    }}
 
- 
- 
 
- // a map to store all transitions
+
+//if-else statements to be used by users to store transtioin
+template<class CST, class NST, auto Pointer,class State>
+
+void IF_ELSE_Protocol(CST a, NST b,State s)
+{
+    if(s==a){
+        Pointer->b;
+    }
+}
+
+//class templates for states
+template<class state>
+struct className;
+//templates for transition
+template<auto pointer>
+struct funcPointer;
+//to be used by users to store transtioin
+template<typename className ,typename funcPointer>
+struct single_transition;
+
+
+
+
+
+ // this container is used to store all transitions
  template <typename...map_transition>
  struct map_protocol;
 
-// find all transitions that applied by users
-
-template<typename...map_protocol>
-struct take_num_of_transition{
-    bool type = false;
-    static_assert(type== false, "Transitions are not Defined");
-
-};
+// after user define the protocol library should find transitions that applied by users
 // take size of map_protocol arguments (number of transitions that user enter )
- // when find transitions
 template<typename...map_protocol>
 struct take_num_of_transition{
   const std::size_t n = sizeof...(map_protocol);
 };
 
-
-// for each transition do the analysis
- 
- //not found transition
- template < auto CST, auto Pointer, typename... map_protocol>
-struct find_transition{
-  bool type = false;
+ template < auto CST, auto NST, auto Pointer, typename... map_protocol>
+struct Search_transition{
+  using type = decltype(false);
 };
- //take the transition when find it.
-template <auto NST, auto CST, auto Pointer,typename... map_protocol>
-struct find_transition<CST, Pointer,map_transition<CST, NST, Pointer>,
-map_protocol...> {
-  using type = map_transition<CST, NST,Pointer>;
+
+template <auto NST, auto CST, auto Pointer,typename take_num_of_transition,typename... map_protocol>
+struct Search_transition<CST, NST,Pointer,take_num_of_transition,map_transition<CST, NST, Pointer>,
+take_num_of_transition,map_protocol...> {
+
+        using type = map_transition<CST, NST,Pointer>;
 };
 
 
-
-
-// then analysis .
-
- 
-template <typename T, typename... Args>
-struct unwrap_of_CurrentState {
-  static_assert(T==false, "Current State is not defind");
-};
-
-template <auto CST, auto NST, auto Pointer, typename... Args>
-struct unwrap_of_CurrentState<map_transition<CST,NST, Pointer>,
-                               Args...> {
-  using type = std::result_of_t<std::declval(CST)(Args...)>;
-};
-
-template <typename T, typename... Args>
-struct unwrap_of_NextState {
-    static_assert(T==false, "Next State is not defind");
-};
-
-template <auto CST, auto NST, auto Pointer, typename... Args>
-struct unwrap_of_NextState<map_transition<CST,NST, Pointer>,
-                               Args...> {
-  using type = std::result_of_t<std::declval(NST)(Args...)>;
-};
+// after Found the  transition.  .
+//analaysing of the protocl should be done
 template <typename T>
 struct unwrap_of_function {
-  static_assert(T==false, "You are in Wrong Transition use another function");
+  static_assert(!std::is_same_v<T, decltype(false)>, "You are in Wrong Transition use another function");
 };
 
- 
- 
-template <auto CST, auto Pointer, typename... map_transition>
-struct find_transition<CST, Pointer,
+template <auto CST, auto NST, auto Pointer, typename take_num_of_transition,typename... map_transition>
+struct Search_transition<CST, NST,Pointer, take_num_of_transition,
                          map_protocol<map_transition...> > {
-  using type = typename find_transition<CST, Pointer,
+  using type = typename Search_transition<CST,NST, Pointer,
                                           map_transition...>::type;
-                             return type;
 };
 
 
+//extract the pointer to the function for each transition
+
+template <auto CST, auto NST, auto Pointer >
+struct unwrap_of_function<map_transition< CST, NST, Pointer>> {
+    static auto CurrentState = CST;
+  static  auto NextState = NST;
+};
+// track pointer in order to check the validiy.
+
+template <typename map_protocol, auto CST, auto NST, auto Pointer>
+static constexpr auto vaild_transition_Start =
+unwrap_of_function<Search_transition<CST, NST,Pointer, map_protocol>>:: CurrentState;
+
+template <typename map_protocol, auto CST, auto NST, auto Pointer>
+static constexpr  auto vaild_transition_END =
+unwrap_of_function<Search_transition<CST, NST, Pointer, map_protocol>>:: NextState;
+
+// track the states
+
+template <typename T, typename... Args>
+struct unwrap_of_states {
+  static_assert(!std::is_same_v<T, decltype(false)>, "Next State is not defind");
+static_assert(!std::is_same_v<T, decltype(false)>, "Current State is not defind");
+};
+
+template <auto CST, auto NST, auto Pointer, typename... Args>
+struct unwrap_of_states<map_transition<CST,NST, Pointer>,
+                               Args...> {
+  using type = std::result_of_t<decltype(NST)(Args...)>;
+using type2 = std::result_of_t<decltype(NST)(Args...)>;
+};
 
 
+// this checker will use templates above to check protocol validation
 
 
-template <auto CST,  template <auto State> typename Check, typename Class, typename map_protocol>
-struct Checker{
+template <typename Class, typename map_protocol>
+class Checker{
+public:
+    Class State;
     Class classID;
-    template <auto NewState>
-    using ThisClass = Checker<NewState, Class, map_protocol>;
-    // Check that the transition is valid, and then return the object pointer to target state.
-    
+    using ThisClass = Checker<Class, map_protocol>;
+    // Check that the transition is valid, and then move the object pointer to new right state.
     template <auto Pointer, typename... Args>
       auto Check_transition(Args&&... args) && {
         (classID*Pointer)(forward<Args>(args)...);
-    
-        constexpr auto target_state =
-          vaild_transition<map_protocol, CST, Pointer>;
-        return ClassID<target_state>(
-                  ThisClass<target_state>{move(classID), true});
+          constexpr auto prevois_state =vaild_transition_Start<map_protocol, State, Pointer>;
+        constexpr auto right_state =
+          vaild_transition_END<map_protocol, State, Pointer>;
+          
+          return Pointer->right_state;
       }
     
+    
+    
 
-   
-  
- 
+    
    
 };
 
 
 
 
-
-
-
+    
+    
+    
+    
 }
 
 
 
-#define Assign_to_Class(Check, CLass, type, map_protocol) \
-template<type CST>  \
-  struct Check                                                         \
+
+
+
+
+
+
+
+#define Assign_to_Class(Class, map_protocol) \
+Class StartState; \
+  class Check                                                         \
     : public ::TypestateTool::Checker<                             \
-          CST, Check, CLass,            \
+ Class,            \
 map_protocol>                                          \
   {                                                                            \
    public:                                                                     \
     using ID =                                                               \
 ::TypestateTool::Checker<                                  \
-            CST, Check,  CLass,         \
+  Class,         \
 map_protocol>;                    \
-    using class_id = CLass;                                              \
-  \
-                                             \
-            \
-                                                             \
+                                                \
+   \
+    template<typename, typename  \
+             >                                             \
+    friend class ::TypestateTool::Checker;   \
+                                                            \
 \
        \
                   \
 }\
+
+
 
 
 
