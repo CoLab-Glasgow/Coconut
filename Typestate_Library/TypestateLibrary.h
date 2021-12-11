@@ -37,11 +37,12 @@ using namespace std;
 namespace TypestateTool{
   
  
- // to be used by users to store transtioin form state to state by using a pointer function in Map style format
+ // to be used by users to store one transition form state to state by using a pointer function in Map style format
  template <auto CST , auto NST, auto Pointer >
  struct map_transition;
 
-// swhich templatesto store transtioin
+ 
+//another way of writing protocol,  swhich templates to store one transition at a time
 template<class CST, class NST, auto Pointer, class State>
 void Swhich_Protocol(CST a , NST b, State s) {
     switch(s){
@@ -52,7 +53,7 @@ void Swhich_Protocol(CST a , NST b, State s) {
 
 
 
-//if-else statements to be used by users to store transtioin
+//another way of writing protocol,if-else statements to be used by users to store one transition at time
 template<class CST, class NST, auto Pointer,class State>
 
 void IF_ELSE_Protocol(CST a, NST b,State s)
@@ -61,7 +62,7 @@ void IF_ELSE_Protocol(CST a, NST b,State s)
         Pointer->b;
     }
 }
-
+// another way of writing protocol, by using class templates 
 //class templates for states
 template<class state>
 struct className;
@@ -76,63 +77,20 @@ struct single_transition;
 
 
 
- // this container is used to store all transitions
+ // this container is used to store all transitions for map transition templates
  template <typename...map_transition>
  struct map_protocol;
 
 // after user define the protocol library should find transitions that applied by users
 // take size of map_protocol arguments (number of transitions that user enter )
 template<typename...map_protocol>
-struct take_num_of_transition{
+struct take_num_of_transitions{
   const std::size_t n = sizeof...(map_protocol);
 };
-
- template < auto CST, auto NST, auto Pointer, typename... map_protocol>
-struct Search_transition{
-  using type = decltype(false);
-};
-
-template <auto NST, auto CST, auto Pointer,typename take_num_of_transition,typename... map_protocol>
-struct Search_transition<CST, NST,Pointer,take_num_of_transition,map_transition<CST, NST, Pointer>,
-take_num_of_transition,map_protocol...> {
-
-        using type = map_transition<CST, NST,Pointer>;
-};
-
-
-// after Found the  transition.  .
-//analaysing of the protocl should be done
-template <typename T>
-struct unwrap_of_function {
-  static_assert(!std::is_same_v<T, decltype(false)>, "You are in Wrong Transition use another function");
-};
-
-template <auto CST, auto NST, auto Pointer, typename take_num_of_transition,typename... map_transition>
-struct Search_transition<CST, NST,Pointer, take_num_of_transition,
-                         map_protocol<map_transition...> > {
-  using type = typename Search_transition<CST,NST, Pointer,
-                                          map_transition...>::type;
-};
-
-
-//extract the pointer to the function for each transition
-
-template <auto CST, auto NST, auto Pointer >
-struct unwrap_of_function<map_transition< CST, NST, Pointer>> {
-    static auto CurrentState = CST;
-  static  auto NextState = NST;
-};
-// track pointer in order to check the validiy.
-
-template <typename map_protocol, auto CST, auto NST, auto Pointer>
-static constexpr auto vaild_transition_Start =
-unwrap_of_function<Search_transition<CST, NST,Pointer, map_protocol>>:: CurrentState;
-
-template <typename map_protocol, auto CST, auto NST, auto Pointer>
-static constexpr  auto vaild_transition_END =
-unwrap_of_function<Search_transition<CST, NST, Pointer, map_protocol>>:: NextState;
-
-// track the states
+ 
+ 
+ 
+ // track the states of any defined protocol
 
 template <typename T, typename... Args>
 struct unwrap_of_states {
@@ -146,6 +104,58 @@ struct unwrap_of_states<map_transition<CST,NST, Pointer>,
   using type = std::result_of_t<decltype(NST)(Args...)>;
 using type2 = std::result_of_t<decltype(NST)(Args...)>;
 };
+
+ template < auto CST, auto NST, auto Pointer, typename... map_protocol>
+struct Search_transition{
+  using type = decltype(false);
+};
+
+template <auto NST, auto CST, auto Pointer,typename take_num_of_transitions,typename... map_protocol>
+struct Search_transition<CST, NST,Pointer,take_num_of_transitions,map_transition<CST, NST, Pointer>,
+take_num_of_transition,map_protocol...> {
+
+        using type = map_transition<CST, NST,Pointer>;
+};
+
+
+// after Found the  transition.  .
+//analaysing of the protocl should be done
+template <typename T>
+struct unwrap_of_function {
+  static_assert(!std::is_same_v<T, decltype(false)>, "You are in Wrong Transition use another function");
+};
+
+template <auto CST, auto NST, auto Pointer, typename take_num_of_transitions,typename... map_transition>
+struct Search_transition<CST, NST,Pointer, take_num_of_transitions,
+                         map_protocol<map_transition...> > {
+  using type = typename Search_transition<CST,NST, Pointer,
+                                          map_transition...>::type;
+};
+ 
+
+
+
+//extract the pointer to the function for each transition
+
+template <auto CST, auto NST, auto Pointer >
+struct unwrap_of_function<map_transition< CST, NST, Pointer>> {
+    static auto CurrentState = CST;
+  static  auto NextState = NST;
+};
+ 
+// track pointer in order to check the validiy of the transition.
+ 
+// check at what state the pointer is
+template <typename map_protocol, auto CST, auto NST, auto Pointer>
+static constexpr auto vaild_transition_Start =
+unwrap_of_function<Search_transition<CST, NST,Pointer, map_protocol>>:: CurrentState;
+// check at where it is going 
+template <typename map_protocol, auto CST, auto NST, auto Pointer>
+static constexpr  auto vaild_transition_END =
+unwrap_of_function<Search_transition<CST, NST, Pointer, map_protocol>>:: NextState;
+
+ 
+
 
 
 // this checker will use templates above to check protocol validation
