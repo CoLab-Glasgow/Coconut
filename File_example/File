@@ -50,9 +50,9 @@ public:
 
 
 using TypestateTool::map_transition;
-using TypestateTool::map_Repeated_transition;
+
 using TypestateTool::map_protocol;
-using TypestateTool::assign_to_class;
+
 
 
  // defined the protocol
@@ -65,7 +65,7 @@ map_transition<FileState::READ, FileState::CLOSE, &File::Close>
 // assign it to class
 
 
- using ID= assign_to_class<File, File_protocol>;
+Assign_to_Class(File, File_protocol);
 
 
 int main(int argc, const char * argv[]) {
