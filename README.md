@@ -3,6 +3,9 @@ This is Typestate Library is a tool that enable C++ users to define a protocol f
 
 ### Download C++ ###
 On Windows,  you can download from [here.](https://docs.microsoft.com/en-us/cpp/build/vscpp-step-0-installation?view=msvc-170/ "Install C and C++ support in Visual Studio") 
+
+On Mac, you can download Xcode from Apple store and use Command Line Tool and then choose C++ in the Language section.
+
 ### Download the library ###
 
 
