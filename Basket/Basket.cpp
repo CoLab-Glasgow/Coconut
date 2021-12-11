@@ -5,6 +5,9 @@
 //  Created by Arwa Alsubhi on 22/11/2021.
 //
 
+
+
+
 #include <stdio.h>
 #include <iostream>
 #include <string.h>
@@ -79,9 +82,9 @@ enum class BasketState{
     END,
 };
 using TypestateTool::map_transition;
-using TypestateTool::map_Repeated_transition;
+
 using TypestateTool::map_protocol;
-using TypestateTool::assign_to_class;
+
 
 
 using Basket_protocol=  map_protocol<
@@ -90,14 +93,13 @@ map_transition<BasketState::EMPTY, BasketState::NONEMPTY,&Basket::addItemsToBask
 map_transition<BasketState::NONEMPTY, BasketState::UNKOWN, &Basket::deleteItem>,
 map_transition<BasketState::UNKOWN, BasketState::NONEMPTY, &Basket::addItemsToBasket>,
 map_transition<BasketState::UNKOWN, BasketState::EMPTY, &Basket::clear>,
-
 map_transition<BasketState::NONEMPTY, BasketState::END, &Basket::calculate>
 > ;
 
-
-
 // assign it to class
- using ID= assign_to_class<Basket, Basket_protocol>;
+
+
+ Assign_to_Class(Basket, Basket_protocol);
 
 
 int main(int argc, const char * argv[]) {
