@@ -81,7 +81,7 @@ struct single_transition;
  template <typename...map_transition>
  struct map_protocol;
 
-// after user define the protocol library should find transitions that applied by users
+// after user define the protocol,  library should find transitions that applied by users
 // take size of map_protocol arguments (number of transitions that user enter )
 template<typename...map_protocol>
 struct take_num_of_transitions{
@@ -97,7 +97,7 @@ struct unwrap_of_states {
   static_assert(!std::is_same_v<T, decltype(false)>, "Next State is not defind");
 static_assert(!std::is_same_v<T, decltype(false)>, "Current State is not defind");
 };
-
+// analyzes them and save them
 template <auto CST, auto NST, auto Pointer, typename... Args>
 struct unwrap_of_states<map_transition<CST,NST, Pointer>,
                                Args...> {
@@ -105,11 +105,15 @@ struct unwrap_of_states<map_transition<CST,NST, Pointer>,
 using type2 = std::result_of_t<decltype(NST)(Args...)>;
 };
 
+ // try to find the protocol
+ 
+ // this function would return error when the library dose not find the a certian transition 
  template < auto CST, auto NST, auto Pointer, typename... map_protocol>
 struct Search_transition{
   using type = decltype(false);
 };
 
+ // this template will return the transition when they find it 
 template <auto NST, auto CST, auto Pointer,typename take_num_of_transitions,typename... map_protocol>
 struct Search_transition<CST, NST,Pointer,take_num_of_transitions,map_transition<CST, NST, Pointer>,
 take_num_of_transition,map_protocol...> {
@@ -167,7 +171,7 @@ public:
     Class State;
     Class classID;
     using ThisClass = Checker<Class, map_protocol>;
-    // Check that the transition is valid, and then move the object pointer to new right state.
+    // Check that the transition is valid, and then move the object pointer to new right state. if is not valid return error 
     template <auto Pointer, typename... Args>
       auto Check_transition(Args&&... args) && {
         (classID*Pointer)(forward<Args>(args)...);
@@ -201,7 +205,7 @@ public:
 
 
 
-
+// this Maroc function to pass the class and the protocol to the Checker class
 
 #define Assign_to_Class(Class, map_protocol) \
 Class StartState; \
