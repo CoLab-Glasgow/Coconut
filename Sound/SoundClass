@@ -11,14 +11,15 @@
 #include <iostream>
 #include "TypestateLibrary.h"
 using namespace std;
-
+// define states of the protocol 
+// could be defined anywhrer in the program
 enum class StatesOfSound{
     OFF,
     ON,
     HIGH,
     LOW,
 };
-
+// create sound class
 class Sound{
     
     
@@ -42,12 +43,12 @@ public:
     
     
 };
-
+// exctract the templates
 using TypestateTool::map_transition;
 
 using TypestateTool::map_protocol;
 
-
+// define the protocol
 
 using Sound_protocol=  map_protocol< map_transition<StatesOfSound::OFF , StatesOfSound::ON, &Sound::TurnON>,
 map_transition<StatesOfSound::ON , StatesOfSound::HIGH, &Sound::turnHigh>,
@@ -59,6 +60,7 @@ map_transition<StatesOfSound::LOW , StatesOfSound::OFF, &Sound::TurnOff>,
 map_transition<StatesOfSound::HIGH , StatesOfSound::OFF, &Sound::TurnOff>
 
 > ;
+// assign to class
 
 Assign_to_Class(Sound,Sound_protocol);
 
