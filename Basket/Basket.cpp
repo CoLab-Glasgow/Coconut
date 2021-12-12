@@ -16,7 +16,11 @@
 #include "TypestateLibrary.h"
 
 using namespace std;
+
+// create a Basket class
 class Basket{
+    
+    // this Basket use a vector 
     std::vector<std::string> items;
     std::vector<float>  prices;
     float total=0;
@@ -25,11 +29,15 @@ public:
     Basket(){
         
     }
+    
+    // clear the vector
     void clear(){
         items.clear();
         prices.clear();
         total=0;
     }
+    
+    // add items to the vector
     void addItemsToBasket(string item, float price){
         
         items.push_back(item);
@@ -37,7 +45,7 @@ public:
         prices.push_back(price);
         
     }
-    
+    // delete items from the vector
     void deleteItem(string item, float price){
         items.erase(std::remove(items.begin(), items.end(), item), items.end());
         prices.erase(std::remove(prices.begin(), prices.end(), price), prices.end());
@@ -45,7 +53,7 @@ public:
 
     }
     
-    
+   // pay 
     void calculate(){
         
         for(float i : prices)
@@ -57,6 +65,7 @@ public:
         total=0;
     }
     
+    // checking the basket for emptyness 
     bool checkBasket(){
         int i=0;
         for( ; i<items.size();i++){
@@ -74,19 +83,21 @@ public:
     
 };
 
-
+// define states of the protocol 
 enum class BasketState{
     EMPTY,
     NONEMPTY,
     UNKOWN,
     END,
 };
+
+// ectract templates 
 using TypestateTool::map_transition;
 
 using TypestateTool::map_protocol;
 
 
-
+// define protocol
 using Basket_protocol=  map_protocol<
 map_transition<BasketState::EMPTY, BasketState::NONEMPTY,&Basket::addItemsToBasket>, map_transition<BasketState::EMPTY,BasketState::END,&Basket::clear>
 , map_transition<BasketState::NONEMPTY, BasketState::NONEMPTY, &Basket::addItemsToBasket>,
