@@ -23,7 +23,7 @@
 
 using namespace std;
 
-
+// define Student class
 
 class Student {
 public:
@@ -42,7 +42,7 @@ void LogOut(){
   }
 };
 
-
+// define States of transitions 
 enum class Studentstate{
    UNAPPROVED,
    APPROVED,
@@ -53,7 +53,7 @@ enum class Studentstate{
 
 
 
-
+// exctract the templates
 using TypestateTool::map_transition;
 using TypestateTool::map_protocol;
 
@@ -67,6 +67,7 @@ map_transition<Studentstate::APPROVED,Studentstate::ENROLLED, &Student::Enrol>,
 map_transition<Studentstate::ENROLLED,Studentstate::ENROLLED, &Student::Enrol>,
  map_transition<Studentstate::ENROLLED, Studentstate::END, &Student::LogOut> >;
 
+// assign it and link it class
 Assign_to_Class(Student, Student_protocol);
 
 
@@ -74,9 +75,10 @@ Assign_to_Class(Student, Student_protocol);
 
 
 int main(int argc, char** argv) {
+    // create object of the class
     Student s ;
     
-    
+   
     s.Register();
     s.Enrol();
     s.Enrol();
