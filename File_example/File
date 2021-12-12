@@ -11,6 +11,8 @@
 #include <fstream>
 #include "TypestateLibrary.h"
 using namespace std;
+
+// file class with all methods to handle file objects 
 class File{
     string myfileName;
     ifstream file;
@@ -41,6 +43,8 @@ public:
     
   
 };
+
+// define states of the protocol 
  enum class FileState{
     INIT,
     OPEN,
@@ -48,7 +52,7 @@ public:
     CLOSE,
 };
 
-
+// exctract the templates 
 using TypestateTool::map_transition;
 
 using TypestateTool::map_protocol;
