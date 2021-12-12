@@ -6,12 +6,6 @@ On Windows,  you can download from [here.](https://docs.microsoft.com/en-us/cpp
 
 On Mac, you can download Xcode from Apple store and use Command Line Tool and then choose C++ in the Language section.
 
-### Download the library ###
-
-
-click on a green "Code" download button which is visible on the right. Choose the Download ZIP option from the Code pull-down menu.
-
-
 ### Linking Typestate Library to source file: ###
 
 Unzip the Download file and then include the library to the file by this comand
