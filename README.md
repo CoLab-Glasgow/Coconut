@@ -1,4 +1,4 @@
-# Typestates_Library
+# Coconut tool 
 This is Typestate Library is a tool that enable C++ users to define a protocol for their classes. This tool will significantly facilitate and secure the user’s work by detecting any violations of the protocol that the user specifies for objects.
 
 ### Download C++ ###
