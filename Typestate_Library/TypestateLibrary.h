@@ -36,40 +36,20 @@ using namespace std;
 
 namespace TypestateTool{
  
- 
- 
 // create a transition template
- template <auto FunctionPointer, bool Repeated>
+template <auto FunctionPointer, auto State>
 struct transition;
-// create transition list template
-template <typename... transition>
-struct transitions_list;
-// unwrap_transition
-template <auto FunctionPointer, bool Repeated, typename...transistions_list>
-struct unwrap_transition;
 
-template <auto FunctionPointer, bool Repeated, typename...transistions_list>
-struct unwrap_transition<FunctionPointer, Repeated, transition<FunctionPointer, Repeated>,transistions_list...>{
-    using type=transition<FunctionPointer, Repeated>;
-    
-};
+// create a state template
+template<auto state, typename...transition>
+struct State;
+ 
+// create typestates tempalate to store all states and transitions
+template <typename...State>
+ struct typestates;
+ 
 
 
-// Unwrap Transitions_list.
-template <auto FunctionPointer, bool Repeated, typename... transition>
-struct unwrap_transition<FunctionPointer,Repeated,
-                         transitions_list<transition...>> {
-  using type = typename unwrap_transition<FunctionPointer, Repeated,
-                                          transition...>::type;
-};
-
-
-// get the the number of transitions in transitions list
-
-template <typename...transitions_list>
-struct Number_of_transitions{
-    const std::size_t n = sizeof...(transitions_list);
-};
  
  // to be used by users to store one transition form state to state by using a pointer function in Map style format
  template <auto CST , auto NST, auto Pointer >
