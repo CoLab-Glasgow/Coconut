@@ -42,33 +42,35 @@ void LogOut(){
   }
 };
 
-// define States of transitions 
-enum class Studentstate{
-   UNAPPROVED,
-   APPROVED,
-   ENROLLED,
-   END,
+using TypestateTool::State;
+using TypestateTool::typestates;
+using TypestateTool::transition;
+
+
+enum class Studentstate {
+    UNAPPROVED,
+    APPROVED,
+    ENROLLED,
+    END,
 };
 
 
+using StudentProtocol = typestates<
+    State<Studentstate::UNAPPROVED, transition
+    <&Student::Register, Studentstate::APPROVED>>,
+    State<Studentstate::APPROVED,
+    transition<&Student::Enrol, Studentstate::ENROLLED>>,
+
+    State<Studentstate::ENROLLED,
+    transition<&Student::Enrol, Studentstate::ENROLLED>,
+    transition<&Student::LogOut, Studentstate::END> >
 
 
-// exctract the templates
-using TypestateTool::map_transition;
-using TypestateTool::map_protocol;
 
-
-
-// define the protocol
- 
-using Student_protocol=  map_protocol<
-map_transition<Studentstate::UNAPPROVED, Studentstate::APPROVED, &Student::Register>,
-map_transition<Studentstate::APPROVED,Studentstate::ENROLLED, &Student::Enrol>,
-map_transition<Studentstate::ENROLLED,Studentstate::ENROLLED, &Student::Enrol>,
- map_transition<Studentstate::ENROLLED, Studentstate::END, &Student::LogOut> >;
+    >;
 
 // assign it and link it class
-Assign_to_Class(Student, Student_protocol);
+Assign_to_Class(Student, StudentProtocol);
 
 
 
@@ -83,6 +85,7 @@ int main(int argc, char** argv) {
     s.Enrol();
     s.Enrol();
     s.LogOut();
+    
     return 0;
 };
 
