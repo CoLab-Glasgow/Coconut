@@ -44,7 +44,7 @@ void LogOut(){
 
 using TypestateTool::State;
 using TypestateTool::typestates;
-using TypestateTool::transition;
+
 
 
 enum class Studentstate {
@@ -55,19 +55,14 @@ enum class Studentstate {
 };
 
 
-using StudentProtocol = typestates<
-    State<Studentstate::UNAPPROVED, transition
-    <&Student::Register, Studentstate::APPROVED>>,
-    State<Studentstate::APPROVED,
-    transition<&Student::Enrol, Studentstate::ENROLLED>>,
+using StudentProtocol = typestate<
 
-    State<Studentstate::ENROLLED,
-    transition<&Student::Enrol, Studentstate::ENROLLED>,
-    transition<&Student::LogOut, Studentstate::END> >
+    State<Studentstate::UNAPPROVED, &Student::Register, Studentstate::APPROVED>,
+    State<Studentstate::APPROVED, &Student::Enrol, Studentstate::ENROLLED>,
+    State<Studentstate::ENROLLED, &Student::Enrol, Studentstate::ENROLLED>,
+    State<Studentstate::END, &Student::LogOut, Studentstate::END>
+> ;
 
-
-
-    >;
 
 // assign it and link it class
 Assign_to_Class(Student, StudentProtocol);
