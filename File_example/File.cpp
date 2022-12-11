@@ -5,9 +5,7 @@
 //  Created by Arwa Alsubhi on 23/11/2021.
 //
 
-#include <stdio.h>
-#include <iostream>
-#include<string.h>
+
 #include <fstream>
 #include "TypestateLibrary.h"
 using namespace std;
@@ -53,18 +51,18 @@ public:
 };
 
 // exctract the templates 
-using TypestateTool::map_transition;
-
-using TypestateTool::map_protocol;
-
+using TypestateTool::State;
+using TypestateTool::typestate;
 
 
- // defined the protocol
- 
-using File_protocol=  map_protocol<map_transition<FileState::INIT, FileState::OPEN, &File::OpenFile>,
-map_transition<FileState::OPEN,FileState::READ, &File::read>,
-map_transition<FileState::READ, FileState::READ, &File::ReadNext>,
-map_transition<FileState::READ, FileState::CLOSE, &File::Close>
+
+// defined the protocol
+
+using File_protocol = typestate<
+    State<FileState::INIT, FileState::OPEN, &File::OpenFile>,
+    State<FileState::OPEN, FileState::READ, &File::read>,
+    State<FileState::READ, FileState::READ, &File::ReadNext>,
+    State<FileState::READ, FileState::CLOSE, &File::Close>
 >;
 // assign it to class
 
