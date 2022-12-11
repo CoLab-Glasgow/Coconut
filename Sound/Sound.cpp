@@ -8,7 +8,7 @@
 
 
 
-#include <iostream>
+
 #include "TypestateLibrary.h"
 using namespace std;
 // define states of the protocol 
@@ -43,23 +43,26 @@ public:
     
     
 };
-// exctract the templates
-using TypestateTool::map_transition;
 
-using TypestateTool::map_protocol;
+
+// exctract the templates
+using TypestateTool::State;
+
+using TypestateTool::typestate;
 
 // define the protocol
 
-using Sound_protocol=  map_protocol< map_transition<StatesOfSound::OFF , StatesOfSound::ON, &Sound::TurnON>,
-map_transition<StatesOfSound::ON , StatesOfSound::HIGH, &Sound::turnHigh>,
-map_transition<StatesOfSound::ON , StatesOfSound::LOW, &Sound::turnLow>,
-map_transition<StatesOfSound::ON , StatesOfSound::OFF, &Sound::TurnOff>,
-map_transition<StatesOfSound::LOW , StatesOfSound::HIGH, &Sound::turnHigh>,
-map_transition<StatesOfSound::HIGH , StatesOfSound::LOW, &Sound::turnLow>,
-map_transition<StatesOfSound::LOW , StatesOfSound::OFF, &Sound::TurnOff>,
-map_transition<StatesOfSound::HIGH , StatesOfSound::OFF, &Sound::TurnOff>
+using Sound_protocol = typestate< 
+    State<StatesOfSound::OFF, &Sound::TurnON, StatesOfSound::ON>,
+    State<StatesOfSound::ON, &Sound::turnHigh, StatesOfSound::HIGH>,
+    State<StatesOfSound::ON, &Sound::turnLow, StatesOfSound::LOW>,
+    State<StatesOfSound::ON, &Sound::TurnOff, StatesOfSound::OFF>,
+    State<StatesOfSound::LOW, &Sound::turnHigh, StatesOfSound::HIGH>,
+    State<StatesOfSound::HIGH, &Sound::turnLow,StatesOfSound::LOW>,
+    State<StatesOfSound::LOW, &Sound::TurnOff,StatesOfSound::OFF>,
+    State<StatesOfSound::HIGH, &Sound::TurnOff,StatesOfSound::OFF> 
 
-> ;
+>;
 // assign to class
 
 Assign_to_Class(Sound,Sound_protocol);
