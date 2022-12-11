@@ -8,11 +8,10 @@
 
 
 
-#include <stdio.h>
-#include <iostream>
-#include <string.h>
+
 #include <vector>
 #include <algorithm>
+#include<string>
 #include "TypestateLibrary.h"
 
 using namespace std;
@@ -91,21 +90,22 @@ enum class BasketState{
     END,
 };
 
-// ectract templates 
-using TypestateTool::map_transition;
 
-using TypestateTool::map_protocol;
+using TypestateTool::State;
+
+using TypestateTool::typestate;
 
 
 // define protocol
-using Basket_protocol=  map_protocol<
-map_transition<BasketState::EMPTY, BasketState::NONEMPTY,&Basket::addItemsToBasket>, map_transition<BasketState::EMPTY,BasketState::END,&Basket::clear>
-, map_transition<BasketState::NONEMPTY, BasketState::NONEMPTY, &Basket::addItemsToBasket>,
-map_transition<BasketState::NONEMPTY, BasketState::UNKOWN, &Basket::deleteItem>,
-map_transition<BasketState::UNKOWN, BasketState::NONEMPTY, &Basket::addItemsToBasket>,
-map_transition<BasketState::UNKOWN, BasketState::EMPTY, &Basket::clear>,
-map_transition<BasketState::NONEMPTY, BasketState::END, &Basket::calculate>
-> ;
+using Basket_protocol = typestate<
+    State<BasketState::EMPTY, &Basket::addItemsToBasket,BasketState::NONEMPTY>,
+    State<BasketState::EMPTY, &Basket::clear, BasketState::END>,
+    State<BasketState::NONEMPTY, &Basket::addItemsToBasket, BasketState::NONEMPTY>,
+    State<BasketState::NONEMPTY, &Basket::deleteItem, BasketState::UNKOWN>,
+    State<BasketState::UNKOWN, &Basket::addItemsToBasket, BasketState::NONEMPTY>,
+    State<BasketState::UNKOWN, &Basket::clear,BasketState::EMPTY>,
+    State<BasketState::NONEMPTY, &Basket::calculate,BasketState::END>
+>;
 
 // assign it to class
 
