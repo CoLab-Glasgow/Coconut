@@ -36,24 +36,14 @@ using namespace std;
 
 namespace TypestateTool{
  
-// create a transition template
-template <auto FunctionPointer, auto State>
-struct transition;
 
 // create a state template
-template<auto state, typename...transition>
-struct State;
- 
+template<auto state, auto FP, auto NextState>
+ struct State;
 // create typestates tempalate to store all states and transitions
 template <typename...State>
- struct typestates;
- 
+struct typestate;
 
-
- 
- // to be used by users to store one transition form state to state by using a pointer function in Map style format
- template <auto CST , auto NST, auto Pointer >
- struct map_transition;
 
  
 //another way of writing protocol,  swhich templates to store one transition at a time
@@ -89,92 +79,87 @@ struct single_transition;
 
 
  
- 
+ template <auto state, auto FP,
+        typename... typestate>
+    struct Unwrap_typestate {
+        // just simple intilization 
+    };
 
 
 
- // this container is used to store all transitions for map transition templates
- template <typename...map_transition>
- struct map_protocol;
-
-// after user define the protocol,  library should find transitions that applied by users
-// take size of map_protocol arguments (number of transitions that user enter )
-template<typename...map_protocol>
-struct take_num_of_transitions{
-  const std::size_t n = sizeof...(map_protocol);
-};
- 
- 
- 
- // track the states of any defined protocol
-
-template <typename T, typename... Args>
-struct unwrap_of_states {
-  static_assert(!std::is_same_v<T, decltype(false)>, "Next State is not defind");
-static_assert(!std::is_same_v<T, decltype(false)>, "Current State is not defind");
-};
-// analyzes them and save them
-template <auto CST, auto NST, auto Pointer, typename... Args>
-struct unwrap_of_states<map_transition<CST,NST, Pointer>,
-                               Args...> {
-  using type = std::result_of_t<decltype(NST)(Args...)>;
-using type2 = std::result_of_t<decltype(NST)(Args...)>;
-};
-
- // try to find the protocol
- 
- // this function would return error when the library dose not find the a certian transition 
- template < auto CST, auto NST, auto Pointer, typename... map_protocol>
-struct Search_transition{
-  using type = decltype(false);
-};
-
- // this template will return the transition when they find it 
-template <auto NST, auto CST, auto Pointer,typename take_num_of_transitions,typename... map_protocol>
-struct Search_transition<CST, NST,Pointer,take_num_of_transitions,map_transition<CST, NST, Pointer>,
-take_num_of_transition,map_protocol...> {
-
-        using type = map_transition<CST, NST,Pointer>;
-};
 
 
-// after Found the  transition.  .
-//analaysing of the protocl should be done
-template <typename T>
-struct unwrap_of_function {
-  static_assert(!std::is_same_v<T, decltype(false)>, "You are in Wrong Transition use another function");
-};
+    template <auto state, auto FP, auto NextState, typename... typestate>
+    struct Unwrap_typestate <state, FP, State<state, FP, NextState>,
+        typestate...> {
+        using type = State<FP, state, NextState>;
 
-template <auto CST, auto NST, auto Pointer, typename take_num_of_transitions,typename... map_transition>
-struct Search_transition<CST, NST,Pointer, take_num_of_transitions,
-                         map_protocol<map_transition...> > {
-  using type = typename Search_transition<CST,NST, Pointer,
-                                          map_transition...>::type;
-};
- 
+    };
+
+    template <auto state, auto FP, typename State,
+        typename... typestate>
+    struct  Unwrap_typestate <state, FP, State,
+        typestate...> {
+        using type = typename Unwrap_typestate<state, FP,
+            typestate...>::type;
+    };
+
+
+    template <auto state, auto FP, typename... State>
+    struct Unwrap_typestate<state, FP,
+        typestate<State...>> {
+        using type = typename Unwrap_typestate<state, FP,
+            State...>::type;
+    };
+
+    template <typename T, typename... Args >
+    struct return_of_FB {};
+
+
+    template <auto state, auto FP, auto NextState, typename... Args>
+    struct return_of_FB<State<state, FP, NextState>,
+        Args...> {
+        using type = std::invoke_result<decltype(FP)(Args...)>;
+
+    };
 
 
 
-//extract the pointer to the function for each transition
+    template <typename T, typename... Args >
+    struct return_of_State {
+    };
 
-template <auto CST, auto NST, auto Pointer >
-struct unwrap_of_function<map_transition< CST, NST, Pointer>> {
-    static auto CurrentState = CST;
-  static  auto NextState = NST;
-};
- 
-// track pointer in order to check the validiy of the transition.
- 
-// check at what state the pointer is
-template <typename map_protocol, auto CST, auto NST, auto Pointer>
-static constexpr auto vaild_transition_Start =
-unwrap_of_function<Search_transition<CST, NST,Pointer, map_protocol>>:: CurrentState;
-// check at where it is going 
-template <typename map_protocol, auto CST, auto NST, auto Pointer>
-static constexpr  auto vaild_transition_END =
-unwrap_of_function<Search_transition<CST, NST, Pointer, map_protocol>>:: NextState;
+    template <auto state, auto FP, auto NextState, typename... Args>
+    struct return_of_State<State<state, FP, NextState>,
+        Args...> {
+        using type = std::invoke_result<decltype(state)(Args...) >;
+
+    };
 
  
+
+template <class T>
+    struct is_reference_wrapper : std::false_type {};
+
+
+  template<typename T, typename... TT>
+    struct All_states {
+        using next = All_states<TT...>;
+        static const constexpr std::size_t size = 1 + next::size;
+        std::vector<T> typestateVector;
+        template<typename C>
+        inline constexpr static C for_each(C cbk, T&& tval, TT &&... ttval) {
+            cbk(std::forward<T>(tval));
+            next::for_each(cbk, std::forward<TT>(ttval)...);
+
+            return cbk;
+        }
+
+        template<typename C>
+        inline constexpr C operator()(C cbk, T&& tval, TT &&... ttval) const {
+            return for_each(cbk, std::forward<T>(tval), std::forward<TT>(ttval)...);
+        }
+    };
 
 
 
