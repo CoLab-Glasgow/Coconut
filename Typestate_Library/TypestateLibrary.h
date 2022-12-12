@@ -166,29 +166,59 @@ template <class T>
 // this checker will use templates above to check protocol validation
 
 
-template <typename Class, typename map_protocol>
-class Checker{
-public:
-    Class State;
-    Class classID;
-    using ThisClass = Checker<Class, map_protocol>;
-    // Check that the transition is valid, and then move the object pointer to new right state. if is not valid return error 
-    template <auto Pointer, typename... Args>
-      auto Check_transition(Args&&... args) && {
-        (classID*Pointer)(forward<Args>(args)...);
-          constexpr auto prevois_state =vaild_transition_Start<map_protocol, State, Pointer>;
-        constexpr auto right_state =
-          vaild_transition_END<map_protocol, State, Pointer>;
-          
-          return Pointer->right_state;
-      }
-    
+
     
     
 
     
    
-};
+template<typename typestate>
+    class TypestateChecker {
+    public:
+
+
+        using checker = TypestateChecker<typestate>;
+
+        using size = std::size_t(typestate);
+
+
+
+        template <auto FB, typename... Args>
+        auto  save_typestate(Args&&... args)&& {
+            
+                  
+
+            //auto F_b = unw
+          // save_typestate(FB, Args...)(std::forward<Args>(args)...);
+            (checker*FB)(std::forward<Args>(args)...);
+            auto target_FB = (return_of_FB<typestate,FB>);
+            //auto target_state = (return_of_state<typestate, state, FB>);
+
+
+
+
+
+            return target_FB;
+        }
+
+
+    protected:
+
+
+
+
+
+
+    private:
+        TypestateChecker cheker;
+
+
+
+
+
+
+
+    };
 
 
 
