@@ -10,7 +10,7 @@ On Mac, you can download Xcode from Apple store and use Command Line Tool and th
 
 Unzip the Download file and then include the library to the file by this comand
 
- code(#include "PATH TO LIBRARY FILE";)
+ code(#include "PATH TO LIBRARY FILE")
  
  ### More infomation ###
 
