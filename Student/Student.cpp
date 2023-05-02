@@ -1,11 +1,4 @@
 
-/*
- * File:   main.cpp
- * Author: arwaalsubhi
- *
- * Created on 12 October 2021, 16:19
- */
-
 
 /*
  * File:   main.cpp
@@ -13,81 +6,77 @@
  *
  * Created on 12 October 2021, 16:19
  */
+
 
 #include <cstdlib>
 #include<iostream>
 #include<string>
-#include "TypestateLibrary.h"
+#include "Cocount/TypestateLibrary.h"
+
+using TypestateLibrary::Typestate_Checker;
+using TypestateLibrary::State;
+using TypestateLibrary::Typestate_Template;
 
 
-
-using namespace std;
 
 // define Student class
 
 class Student {
 public:
-    Student()=default;
-string Name;
-string studentID;
-    
-void Register(){
-  cout<<Name<< " has been registered with ID" <<studentID<<endl;
-   }
-void Enrol(){
-  cout<<Name<< "has been enrolled in a course" << endl;
-}
-void LogOut(){
-   cout<<Name<<"has Logged out"<<endl;
-  }
+    Student() {
+   
+
+    }
+   
+
+    void Register(std::string n , std::string i) {
+        std::cout << n << " has been registered with ID" << i << std::endl;
+    }
+    void Enrol(std::string n) {
+        std::cout << n << "has been enrolled in a course" << std::endl;
+    }
+    void LogOut(std::string n) {
+        std::cout << n << "has Logged out" << std::endl;
+    }
+  
+        
+
 };
 
-using TypestateTool::State;
-using TypestateTool::typestates;
 
 
 
-enum class Studentstate {
+
+BETTER_ENUM (Studentstate, int, 
     UNAPPROVED,
     APPROVED,
     ENROLLED,
-    END,
-};
+    END
+    )
 
 
-using StudentProtocol = typestate<
+using StudentProtocol = Typestate_Template<
 
     State<Studentstate::UNAPPROVED, &Student::Register, Studentstate::APPROVED>,
     State<Studentstate::APPROVED, &Student::Enrol, Studentstate::ENROLLED>,
     State<Studentstate::ENROLLED, &Student::Enrol, Studentstate::ENROLLED>,
     State<Studentstate::END, &Student::LogOut, Studentstate::END>
-> ;
+>;
 
 
-// assign it and link it class
-Assign_to_Class(Student, StudentProtocol);
-
-
-
+using student = Typestate_Checker<Student, StudentProtocol>;
 
 
 int main(int argc, char** argv) {
-    // create object of the class
-    Student s ;
     
-   
-    s.Register();
-    s.Enrol();
-    s.Enrol();
-    s.LogOut();
-    
+    student s;
+
+    (s->*&Student::Register)("Arwa","2598556A");
+    (s->*&Student::Enrol)("Arwa");
+    (s->*&Student::Register)("Arwa", "2598556");
+
+
     return 0;
 };
 
 
-
-
-
-
-
-   
