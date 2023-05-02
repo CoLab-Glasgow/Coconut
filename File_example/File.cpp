@@ -1,82 +1,88 @@
-//
-//  File.cpp
-//  File_example
-//
-//  Created by Arwa Alsubhi on 23/11/2021.
-//
 
-
+#include "File.h"
 #include <fstream>
-#include "TypestateLibrary.h"
-using namespace std;
+#include "Cocount\TypestateLibrary.h"
+
+
+using TypestateLibrary::Typestate_Checker;
+using TypestateLibrary::State;
+using TypestateLibrary::Typestate_Template;
+
 
 // file class with all methods to handle file objects 
-class File{
-    string myfileName;
-    ifstream file;
-    string fileText;
-    
+class File {
+    std::string myfileName;
+    std::ifstream file;
+    std::string fileText;
+
 public:
-    File(){
-        
+    File() {
+
     }
-    void OpenFile(){
+    void OpenFile() {
         file.open(myfileName.c_str());
-        
+
     }
-    void read(){
-        
-       
-        if (getline(file, fileText)) cout << fileText;
-        
+    void read() {
+
+
+        if (getline(file, fileText)) std::cout << fileText;
+
     }
-    void ReadNext(){
-        
-        if (getline(file, fileText)) cout << fileText;
-        
+    void ReadNext() {
+
+        if (getline(file, fileText)) std::cout << fileText;
+
     }
-    void Close(){
+    void Close() {
         file.close();
     }
-    
-  
+
+
 };
 
+
 // define states of the protocol 
- enum class FileState{
+BETTER_ENUM(FileState, int,
     INIT,
     OPEN,
     READ,
-    CLOSE,
-};
+    CLOSE)
+
 
 // exctract the templates 
-using TypestateTool::State;
-using TypestateTool::typestate;
 
 
 
 // defined the protocol
 
-using File_protocol = typestate<
-    State<FileState::INIT, FileState::OPEN, &File::OpenFile>,
-    State<FileState::OPEN, FileState::READ, &File::read>,
-    State<FileState::READ, FileState::READ, &File::ReadNext>,
-    State<FileState::READ, FileState::CLOSE, &File::Close>
+using File_protocol = Typestate_Template<
+    State<FileState::INIT,  &File::OpenFile, FileState::OPEN >,
+    State<FileState::OPEN, &File::read, FileState::READ>,
+    State<FileState::READ, &File::ReadNext, FileState::READ>,
+    State<FileState::READ,  &File::Close, FileState::CLOSE>
 >;
 // assign it to class
 
 
-Assign_to_Class(File, File_protocol);
+using File_example = Typestate_Checker<File, File_protocol>;
 
-
-int main(int argc, const char * argv[]) {
+int main(int argc, const char* argv[]) {
     // insert code here...
-    File file;
-    file.OpenFile();
-    file.read();
-    file.ReadNext();
-    file.Close();
+    File_example file;
+    (file->* &File::OpenFile)();
+    (file->* &File::read)();
+    (file->* & File::ReadNext)();
+    (file->* & File::Close)();
+
+   
+   // this is won't compile 
+    //(file->* & File::OpenFile)();
+    //(file->* & File::read)();
+    //(file->* & File::Close)();
+    //(file->* & File::ReadNext)();
+    
+
+
     return 0;
 }
-
