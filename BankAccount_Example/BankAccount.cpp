@@ -64,3 +64,39 @@ private:
 
 
 BETTER_ENUM(BankStates, int, INIT= 0, INTERMEDITE, FILLED, END)
+
+
+using BankProtocol= Typestate_Template<
+    State<BankStates::INIT, &SalaryManager::setMoney, BankStates::INTERMEDITE>,
+    State<BankStates::INIT, &DataStorage::setMoney, BankStates::FILLED>,
+    State<BankStates::INTERMEDITE, &SalaryManager::addSalary, BankStates::FILLED>,
+    State<BankStates::FILLED, &DataStorage::store, BankStates::END>> ;
+
+
+using Account = Typestate_Checker<BankAccount, BankProtocol> ;
+using Manager = Typestate_Checker<SalaryManager, BankProtocol> ;
+using Storge = Typestate_Checker<DataStorage, BankProtocol> ;
+
+
+
+int main() {
+
+    
+    Account account;
+    Manager manager;
+    Storge storage; 
+   
+   (manager->*&SalaryManager::setMoney)(&account);
+   (storage->*&DataStorage::setMoney)(&account);
+   (manager->*&SalaryManager::Display)();
+   (manager->*&SalaryManager::addSalary)(5000.00);
+ 
+(storage->* & DataStorage::store)();
+
+  // this won't compile is not following the protocol
+ //(storage->* & DataStorage::store)();
+ // (manager->* & SalaryManager::addSalary)(5000.00);
+    
+    
+ return 0;
+}
