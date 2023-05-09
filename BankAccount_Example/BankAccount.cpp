@@ -2,7 +2,7 @@
 #include "Coconut/TypestateLibrary.h"
 #include <iostream>
 
-using TypestateLibrary::Typestate_Checker;
+using TypestateLibrary::TypestateClassConnector;;
 using TypestateLibrary::State;
 using TypestateLibrary::Typestate_Template;
 
@@ -73,9 +73,9 @@ using BankProtocol= Typestate_Template<
     State<BankStates::FILLED, &DataStorage::store, BankStates::END>> ;
 
 
- using Account = Typestate_Checker<BankAccount, BankProtocol> ;
- using Manager = Typestate_Checker<SalaryManager, BankProtocol> ;
- using Storge = Typestate_Checker<DataStorage, BankProtocol> ;
+ using Account = TypestateClassConnector<BankAccount, BankProtocol> ;
+ using Manager = TypestateClassConnector<SalaryManager, BankProtocol> ;
+ using Storge = TypestateClassConnector<DataStorage, BankProtocol> ;
 
 
 
