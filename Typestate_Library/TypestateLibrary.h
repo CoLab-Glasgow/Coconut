@@ -1,4 +1,3 @@
-
 #pragma once
 #include <iostream>
 #include <fstream>
@@ -47,8 +46,10 @@ using namespace hana::literals;
 
 namespace TypestateLibrary {
 
-    
- 
+    struct func_info_t {
+        const char* name;
+    };
+
     template<auto state, auto FP, auto NextState>
     struct State {
 
@@ -70,7 +71,6 @@ namespace TypestateLibrary {
             return valueNextState;
 
         }
-        
         template <typename T>
         std::string  printState(T s) {
             std::string StateString = s._to_string();
@@ -237,10 +237,16 @@ namespace TypestateLibrary {
 
 
     };
-
+    struct MyErrorMessage {
+        static constexpr const char* message = "This is my error message.";
+    };
+    template <bool condition>
+    struct CustomStaticAssert {
+        
+        static_assert(condition, "This is my error message.");
+    };
 
     
-   
 
     
 
@@ -265,7 +271,7 @@ namespace TypestateLibrary {
         }
     protected:
         template <typename... Args>
-        auto log_call(void (T::* func)(Args...), Args... args) -> decltype((std::declval<T>().*func)(args...)) {
+        auto Typestate_Checking(void (T::* func)(Args...), Args... args) -> decltype((std::declval<T>().*func)(args...)) {
             std::cout << "Calling method " << typeid(func).name() << " on instance " << this << std::endl;
             return (static_cast<T*>(this)->*func)(args...);
         }
@@ -291,21 +297,24 @@ namespace TypestateLibrary {
     template<typename T, typename  Typestate_Template>
     std::map< T*, int> Tracked<T, Typestate_Template>::TrackedInstances_;
 
-
+    template <auto x>
+        struct CheckFoo {
+        static_assert(x == true, "x must be 5");
+    };
 
     // The is_tracked trait is used to determine whether a class inherits from Tracked.
     template <typename T, typename  Typestate_Template>
     struct is_tracked : std::integral_constant<bool, std::is_base_of<Tracked<T, Typestate_Template>, T>::value> {};
 
     template <typename T, typename P, typename = void>
-    class Typestate_Checker : public T {};
+    class TypestateClassConnector : public T {};
 
     //The TrackedClass template class is defined using SFINAE to conditionally inherit from Tracked 
     // if the given type T inherits from Tracked.
     //If T doesn't inherit from Tracked, TrackedClass simply inherits from T.
 
     template <typename T, typename  Typestate_Template>
-    class Typestate_Checker<T, Typestate_Template> : public T, public Tracked<T, Typestate_Template> {
+    class TypestateClassConnector<T, Typestate_Template> : public T, public Tracked<T, Typestate_Template> {
 
 
 
@@ -322,12 +331,12 @@ namespace TypestateLibrary {
 
         template <typename F, typename... Args>
        
-        void log_call(F func, Args... args) {
+        void Typestate_Checking(F func, Args... args) {
             
             const auto AnyMethod = Prot.find_any_time_method(func);
             if (reinterpret_cast<decltype(AnyMethod)>(func) == AnyMethod) {
 
-                std::cout << "Calling anytime method " << typeid(func).name() << " on instance " << this << std::endl;
+               // std::cout << "Calling anytime method " << typeid(func).name() << " on instance " << this << std::endl;
 
             }
             
@@ -339,59 +348,55 @@ namespace TypestateLibrary {
                 auto defstate = boost::hana::front(Prot.states);
 
                 const auto cs = boost::hana::at_c<0>(cuerrent_state);
-                const  auto FP = boost::hana::at_c<1>(cuerrent_state);
+                const auto FP = boost::hana::at_c<1>(cuerrent_state);
                 const  auto NS = boost::hana::at_c<2>(cuerrent_state);
                 const auto value = reinterpret_cast<decltype(FP)>(func);
                 const auto cuerr = mapRef[this];
 
                 
-                const bool found = false;
+                
                 if (cs == mapRef[this] && reinterpret_cast<decltype(FP)>(func) == FP)
 
                 {
-                 
-                       
-                      //// std::cout << mapRef[this] << " = " << cs << " and "
+                    
+                    //// std::cout << mapRef[this] << " = " << cs << " and "
                           //  << func << " = " << FP << std::endl;
                         mapRef[this] = NS;
 
-                        std::cout << "Calling method " << typeid(func).name() << " on instance " << this << std::endl;
-                       // std::cout << "Now :" << this << " at state " << mapRef[this] << std::endl;
+                       // std::cout << "Calling method " << typeid(func).name() << " on instance " << this << std::endl;
+                       //std::cout << "Now :" << this << " at state " << mapRef[this] << std::endl;
                    
                 }
 
                 else {
-
-                  assert(FP==value);
-                   // BOOST_STATIC_ASSERT_MSG(isEqual(value,FP), "x and y should not be equal");
-                 //   static_assert(isEqual(FP, func) == false, "x and y should not be equal");
-                  // static_assert(std::is_same_v<decltype(func), decltype(FP)>, "Not the Same!" ) ;
-                 // static_assert(false,"Wrong tranision");
+                  
+                    static_assert(std::is_same<decltype(FP), decltype(value)>::value,
+                        "ptr1 and ptr2 are not the same function pointer");
+                   //if (FP != value) {
+                    //    const bool found = false;
+                      //  CheckFoo<false>{};
+                  //  }
+              //   assert(FP==value);
+              
                 }
-              
-
-                   
+            
                 
-
-              
 
             }
 
-
-
-     
-
         }
 
+
+        
       
      
     public:
         template<typename... Args>
-        auto operator->*(auto (T::* funcPtr)(Args...))  {
+        constexpr auto operator->*(auto (T::* funcPtr)(Args...))  {
 
             return [this, funcPtr](Args&&... args) -> decltype(auto)  {
                 
-                log_call(funcPtr, std::forward<Args>(args)...);
+                Typestate_Checking(funcPtr, std::forward<Args>(args)...);
                 return  (this->*funcPtr)(std::forward<Args>(args)...);
             };
         }
@@ -481,7 +486,7 @@ namespace TypestateLibrary {
         TrackedForSubtyping() {
             counter_++;
             TrackedInstancesSubTyping_.insert(std::make_pair(reinterpret_cast<T*>(this), V));
-            std::cout << "Creating instance " << this << " at state " << V << std::endl;
+         //   std::cout << "Creating instance " << this << " at state " << V << std::endl;
 
         }
 
@@ -491,7 +496,7 @@ namespace TypestateLibrary {
         }
     protected:
         template <typename... Args>
-        auto log_call(void (T::* func)(Args...), Args... args) -> decltype((std::declval<T>().*func)(args...)) {
+        auto Typestate_Checking(void (T::* func)(Args...), Args... args) -> decltype((std::declval<T>().*func)(args...)) {
             std::cout << "Calling method " << typeid(func).name() << " on instance " << this << std::endl;
             return (static_cast<T*>(this)->*func)(args...);
         }
@@ -539,7 +544,7 @@ namespace TypestateLibrary {
 
         template <typename F, typename... Args>
 
-        void log_call(F func, Args... args) {
+        void Typestate_Checking(F func, Args... args) {
 
            
 
@@ -570,7 +575,7 @@ namespace TypestateLibrary {
 
                 else {
 
-                    assert(FP == value);
+                //    assert(FP == value);
                     // static_assert(std::is_same_v<decltype(func), decltype(FP)>, "Not the Same!" ) ;
                    // static_assert(false,"Wrong tranision");
                 }
@@ -587,14 +592,16 @@ namespace TypestateLibrary {
 
     public:
         template<typename... Args>
-        auto operator->*(auto (T::* funcPtr)(Args...)) {
+        constexpr auto operator->*(auto (T::* funcPtr)(Args...)) {
 
             return [this, funcPtr](Args&&... args) -> decltype(auto) {
 
-                log_call(funcPtr, std::forward<Args>(args)...);
+                Typestate_Checking(funcPtr, std::forward<Args>(args)...);
                 return  (this->*funcPtr)(std::forward<Args>(args)...);
             };
         }
+
+
 
 
 
