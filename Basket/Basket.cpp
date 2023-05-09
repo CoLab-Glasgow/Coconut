@@ -15,7 +15,7 @@
 #include <algorithm>
 #include<string>
 #include "Cocount\TypestateLibrary.h""
-using TypestateLibrary::Typestate_Checker;
+using TypestateLibrary::TypestateClassConnector;
 using TypestateLibrary::State;
 using TypestateLibrary::Typestate_Template;
 
@@ -105,11 +105,10 @@ using Basket_protocol = Typestate_Template<
     State<BasketState::NONEMPTY, &Basket_Class::calculate, BasketState::END>
 >;
 
-// assign it to class
 
 
 
-using Basket = Typestate_Checker<Basket_Class, Basket_protocol>;
+using Basket = TypestateClassConnector<Basket_Class, Basket_protocol>;
 
 int main(int argc, const char* argv[]) {
 
