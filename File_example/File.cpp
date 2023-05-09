@@ -4,7 +4,7 @@
 #include "Cocount\TypestateLibrary.h"
 
 
-using TypestateLibrary::Typestate_Checker;
+using TypestateLibrary::TypestateClassConnector;
 using TypestateLibrary::State;
 using TypestateLibrary::Typestate_Template;
 
@@ -62,10 +62,9 @@ using File_protocol = Typestate_Template<
     State<FileState::READ, &File::ReadNext, FileState::READ>,
     State<FileState::READ,  &File::Close, FileState::CLOSE>
 >;
-// assign it to class
 
 
-using File_example = Typestate_Checker<File, File_protocol>;
+using File_example = TypestateClassConnector<File, File_protocol>;
 
 int main(int argc, const char* argv[]) {
     // insert code here...
