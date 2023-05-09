@@ -6,75 +6,78 @@
 //
 
 
+#include "C:\Users\Arwa Alsubhi\source\repos\Cocount_Typestate_based_tool\Cocount_Typestate_based_tool\TypestateLibrary.h"
+
+using TypestateLibrary::TypestateClassConnector;
+using TypestateLibrary::State;
+using TypestateLibrary::Typestate_Template;
 
 
 
-#include "TypestateLibrary.h"
-using namespace std;
 // define states of the protocol 
 // could be defined anywhrer in the program
-enum class StatesOfSound{
+enum  StatesOfSound {
     OFF,
     ON,
     HIGH,
     LOW,
 };
 // create sound class
-class Sound{
-    
-    
+class Sound {
+
+
 public:
-    Sound()=default;
-    
-    void TurnON(){
-        cout<<"Sound is On"<<endl;
+    Sound() = default;
+
+    void TurnON() {
+        std::cout << "Sound is On" << std::endl;
     }
-    
-    void TurnOff(){
-        cout<<"Sound is Off"<<endl;
+
+    void TurnOff() {
+        std::cout << "Sound is Off" << std::endl;
     }
-    
-    void turnHigh(){
-        cout<<"Sound is High"<<endl;
+
+    void turnHigh() {
+        std::cout << "Sound is High" << std::endl;
     }
-    void turnLow(){
-        cout<<"Sound is Low"<<endl;
+    void turnLow() {
+        std::cout << "Sound is Low" << std::endl;
     }
-    
-    
+
+
 };
 
 
-// exctract the templates
-using TypestateTool::State;
 
-using TypestateTool::typestate;
 
 // define the protocol
 
-using Sound_protocol = typestate< 
+using Sound_protocol = Typestate_Template<
     State<StatesOfSound::OFF, &Sound::TurnON, StatesOfSound::ON>,
     State<StatesOfSound::ON, &Sound::turnHigh, StatesOfSound::HIGH>,
     State<StatesOfSound::ON, &Sound::turnLow, StatesOfSound::LOW>,
     State<StatesOfSound::ON, &Sound::TurnOff, StatesOfSound::OFF>,
     State<StatesOfSound::LOW, &Sound::turnHigh, StatesOfSound::HIGH>,
-    State<StatesOfSound::HIGH, &Sound::turnLow,StatesOfSound::LOW>,
-    State<StatesOfSound::LOW, &Sound::TurnOff,StatesOfSound::OFF>,
-    State<StatesOfSound::HIGH, &Sound::TurnOff,StatesOfSound::OFF> 
+    State<StatesOfSound::HIGH, &Sound::turnLow, StatesOfSound::LOW>,
+    State<StatesOfSound::LOW, &Sound::TurnOff, StatesOfSound::OFF>,
+    State<StatesOfSound::HIGH, &Sound::TurnOff, StatesOfSound::OFF>
 
 >;
 // assign to class
 
-Assign_to_Class(Sound,Sound_protocol);
+using sound = TypestateClassConnector<Sound, Sound_protocol>;
 
-int main(int argc, const char * argv[]) {
+int main(int argc, const char* argv[]) {
     // insert code here...
-    Sound s;
-    s.TurnON();
-    s.turnLow();
-    s.turnHigh();
-    s.TurnOff();
-    
-   
+    sound s;
+    (s->*&Sound::TurnON)();
+    (s->*&Sound::turnLow)();
+    (s->*&Sound::turnHigh)();
+    (s->*&Sound::TurnOff)();
+
+
+ 
+
+
     return 0;
 }
