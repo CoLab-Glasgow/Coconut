@@ -13,7 +13,7 @@
 #include<string>
 #include "Cocount/TypestateLibrary.h"
 
-using TypestateLibrary::Typestate_Checker;
+using TypestateLibrary::TypestateClassConnector;
 using TypestateLibrary::State;
 using TypestateLibrary::Typestate_Template;
 
@@ -64,7 +64,7 @@ using StudentProtocol = Typestate_Template<
 >;
 
 
-using student = Typestate_Checker<Student, StudentProtocol>;
+using student = TypestateClassConnector<Student, StudentProtocol>;
 
 
 int main(int argc, char** argv) {
