@@ -89,8 +89,8 @@ namespace TypestateLibrary {
 
         auto Get_start_state() {
             auto first_element = boost::hana::front(states);
-        //  std::cout << "Start state for the object is " << first_element.GetvalueState();
-            //return std::get<0>(states).GetvalueState();
+        
+        
             return first_element.GetvalueState();
 
         }
@@ -250,8 +250,7 @@ namespace TypestateLibrary {
 
     
 
-    // allows an object t that is currently managed by a std::week_ptr named pt to safely generate 
-    //additional std::week_ptr instances pt1, pt2, ... that all share ownership of t with pt.
+   
     template <typename T, typename  Typestate_Template>
     class Tracked : public T {
     protected:
@@ -297,10 +296,7 @@ namespace TypestateLibrary {
     template<typename T, typename  Typestate_Template>
     std::map< T*, int> Tracked<T, Typestate_Template>::TrackedInstances_;
 
-    template <auto x>
-        struct CheckFoo {
-        static_assert(x == true, "x must be 5");
-    };
+   
 
     // The is_tracked trait is used to determine whether a class inherits from Tracked.
     template <typename T, typename  Typestate_Template>
@@ -309,10 +305,7 @@ namespace TypestateLibrary {
     template <typename T, typename P, typename = void>
     class TypestateClassConnector : public T {};
 
-    //The TrackedClass template class is defined using SFINAE to conditionally inherit from Tracked 
-    // if the given type T inherits from Tracked.
-    //If T doesn't inherit from Tracked, TrackedClass simply inherits from T.
-
+   
     template <typename T, typename  Typestate_Template>
     class TypestateClassConnector<T, Typestate_Template> : public T, public Tracked<T, Typestate_Template> {
 
@@ -475,8 +468,7 @@ namespace TypestateLibrary {
    
 
 
-     // allows an object t that is currently managed by a std::week_ptr named pt to safely generate 
-    //additional std::week_ptr instances pt1, pt2, ... that all share ownership of t with pt.
+     
     template <typename T, typename  Merged_Typestate>
     class TrackedForSubtyping : public T {
     protected:
@@ -551,8 +543,7 @@ namespace TypestateLibrary {
                 static std::map<T*, int>& mapRef = this->TrackedInstances();
                 std::cout << " object " << this << " at state " << mapRef[this] << std::endl;
                 auto cuerrent_state = Prot.Get_from_combine_both(mapRef[this], func);
-               // auto defstate = boost::hana::front(Prot.);
-
+              
                 const auto cs = boost::hana::at_c<0>(cuerrent_state);
                 const  auto FP = boost::hana::at_c<1>(cuerrent_state);
                 const  auto NS = boost::hana::at_c<2>(cuerrent_state);
