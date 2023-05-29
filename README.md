@@ -12,8 +12,5 @@ Unzip the Download file and then include the library to the file by this comand
 
  code(#include "PATH TO LIBRARY FILE")
  
- ### More infomation ###
-
-for more information how to create the protocol and use the library you use this website tutorial [here.](https://arwaalsubhi99.wixsite.com/typestateuesrtesting/ "Website tutorial") 
 
 
