@@ -237,13 +237,14 @@ namespace TypestateLibrary {
 
 
     };
+    
+    
     struct MyErrorMessage {
-        static constexpr const char* message = "This is my error message.";
+        static constexpr const char* message = "Calling method Cause errors, Follow the typestate specfications!";
     };
     template <bool condition>
-    struct CustomStaticAssert {
-        
-        static_assert(condition, "This is my error message.");
+    struct CustomStaticAssert 
+        static_assert(condition, "Calling method Cause errors, Follow the typestate specfications!");
     };
 
     
@@ -254,7 +255,7 @@ namespace TypestateLibrary {
     template <typename T, typename  Typestate_Template>
     class Tracked : public T {
     protected:
-        // static instances map that holds weak pointers to all instances of classes 
+        // static instances map that holds pointers to all instances of classes 
         //that inherit from Tracked class
         
         Tracked() {
@@ -364,7 +365,7 @@ namespace TypestateLibrary {
                 else {
                   
                     static_assert(std::is_same<decltype(FP), decltype(value)>::value,
-                        "ptr1 and ptr2 are not the same function pointer");
+                        "Calling method Cause errors, Follow the typestate specfications!");
                    //if (FP != value) {
                     //    const bool found = false;
                       //  CheckFoo<false>{};
@@ -472,9 +473,8 @@ namespace TypestateLibrary {
     template <typename T, typename  Merged_Typestate>
     class TrackedForSubtyping : public T {
     protected:
-        // static instances map that holds weak pointers to all instances of classes 
-        //that inherit from Tracked class
-
+        // static instances map that holds pointers to all instances of classes 
+       
         TrackedForSubtyping() {
             counter_++;
             TrackedInstancesSubTyping_.insert(std::make_pair(reinterpret_cast<T*>(this), V));
@@ -556,16 +556,17 @@ namespace TypestateLibrary {
 
                 {
 
-                   std::cout << mapRef[this] << " = " << cs << " and "
-                      << func << " = " << FP << std::endl;
+                  // std::cout << mapRef[this] << " = " << cs << " and "
+                      //<< func << " = " << FP << std::endl;
                    mapRef[this] = NS;
-                    std::cout << "Calling method " << typeid(func).name() << " on instance " << this << std::endl;
-                    std::cout << "Now :" << this << " at state " << mapRef[this] << std::endl;
+                   // std::cout << "Calling method " << typeid(func).name() << " on instance " << this << std::endl;
+                   // std::cout << "Now :" << this << " at state " << mapRef[this] << std::endl;
 
                 }
 
                 else {
-
+                static_assert(std::is_same<decltype(FP), decltype(value)>::value,
+                        "Calling method Cause errors, Follow the typestate specfications!");
                 //    assert(FP == value);
                     // static_assert(std::is_same_v<decltype(func), decltype(FP)>, "Not the Same!" ) ;
                    // static_assert(false,"Wrong tranision");
