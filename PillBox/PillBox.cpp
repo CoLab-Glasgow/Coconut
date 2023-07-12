@@ -1,10 +1,10 @@
-#include "PillBox.h"
+
 #include <iostream>
 #include <string>
 #include <chrono>
 #include <thread>
 #include <vector>
-#include "C:\Users\Arwa Alsubhi\source\repos\Cocount_Typestate_based_tool\Cocount_Typestate_based_tool\TypestateLibrary.h"
+#include "Coconut\TypestateLibrary.h"
 
 using TypestateLibrary::TypestateClassConnector;
 using TypestateLibrary::State;
@@ -27,11 +27,11 @@ public:
     int get_minutes() {
         return this->minute_;
     }
+
 private:
     std::string pillName_;
     int hour_;
     int minute_;
-
 
 };
 
@@ -42,10 +42,9 @@ class PillBox {
 public:
     void Activate_pillBox() {
         std::cout << "PillBox is active now! " << std::endl;
-
     }
-    void addDrawers(Drawer* d) {
 
+    void addDrawers(Drawer* d) {
         DrawersBox.push_back(*d);
     }
 
@@ -57,19 +56,16 @@ public:
         }
 
     }
-
     void Deactivate_Pill_Box() {
 
     }
 
 private:
-
     std::vector<Drawer> DrawersBox;
 };
 
 
 class RedLed {
-
 public:
 
     void Switch_ON(Drawer* d) {
@@ -84,17 +80,14 @@ public:
             << std::endl;
     }
 
-
-
 };
-
 
 
 BETTER_ENUM(domain, int,
     Idle, Active, NonActive, Pill_Time_On, RedLedON, RedLedOFF, RedLedBlinkinning)
 
 
-    using PillBox_typestate = Typestate_Template<
+using PillBox_typestate = Typestate_Template<
     State<domain::Idle, &PillBox::Activate_pillBox, domain::Active>,
     State<domain::Active, &PillBox::Process_System_Time, domain::Pill_Time_On>,
     State<domain::Pill_Time_On, &RedLed::Switch_ON, domain::RedLedON>,
@@ -109,29 +102,24 @@ using RedLed_ = TypestateClassConnector<RedLed, PillBox_typestate>;
 
 int main() {
 
-
-    Drawer drawer1("Panadol", 3, 50);
-    Drawer drawer2("Piriton Antihistamine", 8, 40);
-
-
-    auto h = 10;
-    auto min = 30;
+Drawer drawer1("Panadol", 3, 50);
+Drawer drawer2("Piriton Antihistamine", 8, 40);
 
 
-    PillBox_ pillbox1 , pillbox2;
-    RedLed_ redled;
+auto h = 10;
+auto min = 30;
 
-    (pillbox1->*&PillBox::addDrawers)(&drawer1);
-    (pillbox2->*&PillBox::addDrawers)(&drawer2);
+PillBox_ pillbox1 , pillbox2;
+RedLed_ redled;
 
-    (pillbox1->*& PillBox::Activate_pillBox)();
-   Drawer d = (pillbox->* & PillBox::Process_System_Time)(&h, &min);
-   (redled->* & RedLed::Switch_ON)(&d);
-   (redled->* & RedLed::Blink)(&d);
-  (redled->* & RedLed::Switch_OFF)(&d);
+(pillbox1->*&PillBox::addDrawers)(&drawer1);
+(pillbox2->*&PillBox::addDrawers)(&drawer2);
 
-
-
+(pillbox1->*& PillBox::Activate_pillBox)();
+Drawer d = (pillbox->* & PillBox::Process_System_Time)(&h, &min);
+(redled->* & RedLed::Switch_ON)(&d);
+(redled->* & RedLed::Blink)(&d);
+(redled->* & RedLed::Switch_OFF)(&d);
 
 
 
