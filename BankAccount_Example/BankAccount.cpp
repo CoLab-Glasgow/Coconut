@@ -2,23 +2,23 @@
 #include "Coconut/TypestateLibrary.h"
 #include <iostream>
 
-using TypestateLibrary::TypestateClassConnector;;
+using TypestateLibrary::TypestateClassConnector;
 using TypestateLibrary::State;
 using TypestateLibrary::Typestate_Template;
 
 
-
 class BankAccount {
 public:
-    float get() const {
+
+float get() const {
         return balance;
     }
 
-    void fill(float amount) {
+void fill(float amount) {
         balance += amount;
     }
 
-    void applyInterest(float rate) {
+void applyInterest(float rate) {
         balance *= rate;
     }
 
@@ -29,11 +29,12 @@ private:
 
 class DataStorage {
 public:
-    void setMoney(BankAccount* m) {
+
+void setMoney(BankAccount* m) {
         money = m;
     }
 
-    void store() {
+void store() {
         float amount = money->get();
         std::cout << amount << std::endl;
     }
@@ -45,21 +46,24 @@ private:
 
 class SalaryManager {
 public:
-    void setMoney(BankAccount* m) {
+
+void setMoney(BankAccount* m) {
         money = m;
     }
 
-    void addSalary(float amount) {
+void addSalary(float amount) {
         money->fill(amount);
         money->applyInterest(1.02f);
     }
-    void Display() {
+
+void Display() {
         std::cout << "Information For Account" << std::endl;
     }
 
 private:
 
-    BankAccount* money = nullptr;
+BankAccount* money = nullptr;
+
 };
 
 
@@ -73,32 +77,31 @@ using BankProtocol= Typestate_Template<
     State<BankStates::FILLED, &DataStorage::store, BankStates::END>> ;
 
 
- using Account = TypestateClassConnector<BankAccount, BankProtocol> ;
- using Manager = TypestateClassConnector<SalaryManager, BankProtocol> ;
- using Storge = TypestateClassConnector<DataStorage, BankProtocol> ;
+using Account = TypestateClassConnector<BankAccount, BankProtocol> ;
+using Manager = TypestateClassConnector<SalaryManager, BankProtocol> ;
+using Storge = TypestateClassConnector<DataStorage, BankProtocol> ;
 
 
 
 int main() {
 
-    
-    Account account;
-    Manager manager;
-    Storge storage; 
+Account account;
+Manager manager;
+Storge storage; 
    
-   (manager->*&SalaryManager::setMoney)(&account);
-   (storage->*&DataStorage::setMoney)(&account);
-   (manager->*&SalaryManager::Display)();
-   (manager->*&SalaryManager::addSalary)(5000.00);
-   (storage->* & DataStorage::store)();
+(manager->*&SalaryManager::setMoney)(&account);
+(storage->*&DataStorage::setMoney)(&account);
+(manager->*&SalaryManager::Display)();
+(manager->*&SalaryManager::addSalary)(5000.00);
+(storage->* & DataStorage::store)();
 
     
-  // this won't compile is not following the protocol
- //(storage->* & DataStorage::store)();
- // (manager->* & SalaryManager::addSalary)(5000.00);
-    
-    
+// This won't compile, is not following the protocol
+//(storage->* & DataStorage::store)();
+//(manager->* & SalaryManager::addSalary)(5000.00);
+      
  return 0;
+    
 }
 
 
