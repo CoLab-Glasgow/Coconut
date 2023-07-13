@@ -8,17 +8,20 @@ This Typestate Library is a tool that enables C++ users to define a protocol for
 
 - On Linux, you can download it from [here.](https://learn.microsoft.com/en-us/cpp/linux/download-install-and-setup-the-linux-development-workload?view=msvc-170) 
 
-### Dependencies ###
-
-- Boost library Version 1.82.0
   
 ### Download Cocount ###
 
 ```
-git clone https://github.com/CoLab-Glasgow/Coconut
+git clone https://github.com/CoLab-Glasgow/Coconut.git
 
 ```
+### Dependencies ###
 
+- Boost library Version 1.82.0
+``` 
+git clone --branch boost-1.82.0 --depth 1 https://github.com/boostorg/boost.git
+
+``` 
 ### Build the Coconut Library ##
 - Navigate to the "Coconut" directory using the command:
 
