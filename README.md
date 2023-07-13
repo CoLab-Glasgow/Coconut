@@ -14,26 +14,36 @@ This Typestate Library is a tool that enables C++ users to define a protocol for
   
 ### Download Cocount ###
 
-``` git clone https://github.com/CoLab-Glasgow/Coconut ```
+```
+git clone https://github.com/CoLab-Glasgow/Coconut
+
+```
 
 ### Build the Coconut Library ##
 - Navigate to the "Coconut" directory using the command:
 
-``` cd Coconut ```
+```
+cd Coconut
 
+```
 - Once inside the "Coconut" directory, run the following commands to build the library:
   
 
-``` mkdir build ```
-``` cd build ```
-``` cmake .. ```
-``` make ```
+```
+mkdir build
+cd build 
+cmake ... 
+make
+```
 
 ### Compile the examples ###
  
 To compile one of the case studies use this command
 
- ``` g++-10 -std=c++20 CaseStudyName.cpp ```
+ ``` 
+g++-10 -std=c++20 CaseStudyName.cpp
+
+```
  
 
 
