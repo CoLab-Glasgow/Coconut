@@ -17,10 +17,12 @@ This Typestate Library is a tool that enables C++ users to define a protocol for
 ``` git clone https://github.com/CoLab-Glasgow/Coconut ```
 
 ### Build the Coconut Library ##
-Navigate to the "Coconut" directory using the command:
+- Navigate to the "Coconut" directory using the command:
 
 ``` cd Coconut ```
-Once inside the "Coconut" directory, run the following commands to build the library:
+
+- Once inside the "Coconut" directory, run the following commands to build the library:
+  
 
 ``` mkdir build ```
 ``` cd build ```
