@@ -95,10 +95,10 @@ Storge storage;
 (manager->*&SalaryManager::addSalary)(5000.00);
 (storage->* & DataStorage::store)();
 
-    
+ 
 // This won't compile, is not following the protocol
-//(storage->* & DataStorage::store)();
-//(manager->* & SalaryManager::addSalary)(5000.00);
+//(storage->*&DataStorage::store)();
+//(manager->*&SalaryManager::addSalary)(5000.00);
       
  return 0;
     
