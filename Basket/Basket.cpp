@@ -2,8 +2,8 @@
 
 #include <vector>
 #include <algorithm>
-#include<string>
-#include "Cocount\TypestateLibrary.h"
+#include <string>
+#include <Typestate_Library\TypestateLibrary.h>
 
 using TypestateLibrary::TypestateClassConnector;
 using TypestateLibrary::State;
