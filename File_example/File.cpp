@@ -1,7 +1,7 @@
 
-#include "File.h"
+
 #include <fstream>
-#include "Cocount\TypestateLibrary.h"
+#include <Typestate_Library\TypestateLibrary.h>
 
 
 using TypestateLibrary::TypestateClassConnector;
@@ -11,6 +11,7 @@ using TypestateLibrary::Typestate_Template;
 
 // file class with all methods to handle file objects 
 class File {
+    
     std::string myfileName;
     std::ifstream file;
     std::string fileText;
@@ -50,7 +51,7 @@ BETTER_ENUM(FileState, int,
     CLOSE)
 
 
-// exctract the templates 
+
 
 
 
