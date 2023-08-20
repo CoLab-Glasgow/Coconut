@@ -4,7 +4,7 @@
 #include <chrono>
 #include <thread>
 #include <vector>
-#include "Coconut\TypestateLibrary.h"
+#include <Typestate_Library\TypestateLibrary.h>
 
 using TypestateLibrary::TypestateClassConnector;
 using TypestateLibrary::State;
