@@ -6,8 +6,7 @@
 
 
 
-
-#include "C:\Users\Arwa Alsubhi\source\repos\Cocount_Typestate_based_tool\Cocount_Typestate_based_tool\TypestateLibrary.h"
+#include <Typestate_Library\TypestateLibrary.h>
 
 
 using TypestateLibrary::TypestateClassConnector;
