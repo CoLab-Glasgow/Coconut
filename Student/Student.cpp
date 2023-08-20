@@ -11,7 +11,7 @@
 #include <cstdlib>
 #include<iostream>
 #include<string>
-#include "Cocount/TypestateLibrary.h"
+#include <Typestate_Library\TypestateLibrary.h>
 
 using TypestateLibrary::TypestateClassConnector;
 using TypestateLibrary::State;
