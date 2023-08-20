@@ -346,24 +346,18 @@ namespace TypestateLibrary {
 
                 {
                     
-                    //// std::cout << mapRef[this] << " = " << cs << " and "
-                          //  << func << " = " << FP << std::endl;
+                    
                         mapRef[this] = NS;
 
-                       // std::cout << "Calling method " << typeid(func).name() << " on instance " << this << std::endl;
-                       //std::cout << "Now :" << this << " at state " << mapRef[this] << std::endl;
-                   
+                       
                 }
 
                 else {
                   
                     static_assert(std::is_same<decltype(FP), decltype(value)>::value,
                         "Calling method Cause errors, Follow the typestate specfications!");
-                   //if (FP != value) {
-                    //    const bool found = false;
-                      //  CheckFoo<false>{};
-                  //  }
-              //   assert(FP==value);
+                   
+              assert(FP==value);
               
                 }
             
