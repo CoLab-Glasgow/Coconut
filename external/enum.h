@@ -1,1 +1,1326 @@
-{"payload":{"allShortcutsEnabled":false,"fileTree":{"":{"items":[{"name":".github","path":".github","contentType":"directory"},{"name":"doc","path":"doc","contentType":"directory"},{"name":"example","path":"example","contentType":"directory"},{"name":"extra","path":"extra","contentType":"directory"},{"name":"script","path":"script","contentType":"directory"},{"name":"test","path":"test","contentType":"directory"},{"name":".gitignore","path":".gitignore","contentType":"file"},{"name":".travis.yml","path":".travis.yml","contentType":"file"},{"name":"LICENSE.md","path":"LICENSE.md","contentType":"file"},{"name":"README.md","path":"README.md","contentType":"file"},{"name":"appveyor.yml","path":"appveyor.yml","contentType":"file"},{"name":"enum.h","path":"enum.h","contentType":"file"}],"totalCount":12}},"fileTreeProcessingTime":3.850882,"foldersToFetch":[],"reducedMotionEnabled":null,"repo":{"id":35449048,"defaultBranch":"master","name":"better-enums","ownerLogin":"aantron","currentUserCanPush":false,"isFork":false,"isEmpty":false,"createdAt":"2015-05-11T20:44:15.000Z","ownerAvatar":"https://avatars.githubusercontent.com/u/12073668?v=4","public":true,"private":false,"isOrgOwned":false},"symbolsExpanded":false,"treeExpanded":true,"refInfo":{"name":"master","listCacheKey":"v0:1563269093.0","canEdit":false,"refType":"branch","currentOid":"1e8f499ddff8eec43129ac974eebdfb745920643"},"path":"enum.h","currentUser":null,"blob":{"rawLines":["// This file is part of Better Enums, released under the BSD 2-clause license.","// See LICENSE.md for details, or visit http://github.com/aantron/better-enums.","","#pragma once","","#ifndef BETTER_ENUMS_ENUM_H","#define BETTER_ENUMS_ENUM_H","","","","#include <cstddef>","#include <cstring>","#include <iosfwd>","#include <stdexcept>","","","// in-line, non-#pragma warning handling","// not supported in very old compilers (namely gcc 4.4 or less)","#ifdef __GNUC__","#   ifdef __clang__","#      define BETTER_ENUMS_IGNORE_OLD_CAST_HEADER _Pragma(\"clang diagnostic push\")","#      define BETTER_ENUMS_IGNORE_OLD_CAST_BEGIN _Pragma(\"clang diagnostic ignored \\\"-Wold-style-cast\\\"\")","#      define BETTER_ENUMS_IGNORE_OLD_CAST_END _Pragma(\"clang diagnostic pop\")","#      define BETTER_ENUMS_IGNORE_ATTRIBUTES_HEADER","#      define BETTER_ENUMS_IGNORE_ATTRIBUTES_BEGIN","#      define BETTER_ENUMS_IGNORE_ATTRIBUTES_END","#   else","#      define BETTER_ENUMS_GCC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100)","#      if BETTER_ENUMS_GCC_VERSION > 40400","#         define BETTER_ENUMS_IGNORE_OLD_CAST_HEADER _Pragma(\"GCC diagnostic push\")","#         define BETTER_ENUMS_IGNORE_OLD_CAST_BEGIN _Pragma(\"GCC diagnostic ignored \\\"-Wold-style-cast\\\"\")","#         define BETTER_ENUMS_IGNORE_OLD_CAST_END _Pragma(\"GCC diagnostic pop\")","#         if (BETTER_ENUMS_GCC_VERSION >= 70300)","#               define BETTER_ENUMS_IGNORE_ATTRIBUTES_HEADER _Pragma(\"GCC diagnostic push\")","#               define BETTER_ENUMS_IGNORE_ATTRIBUTES_BEGIN _Pragma(\"GCC diagnostic ignored \\\"-Wattributes\\\"\")","#               define BETTER_ENUMS_IGNORE_ATTRIBUTES_END _Pragma(\"GCC diagnostic pop\")","#         else","#               define BETTER_ENUMS_IGNORE_ATTRIBUTES_HEADER","#               define BETTER_ENUMS_IGNORE_ATTRIBUTES_BEGIN","#               define BETTER_ENUMS_IGNORE_ATTRIBUTES_END","#         endif","#      else","#         define BETTER_ENUMS_IGNORE_OLD_CAST_HEADER","#         define BETTER_ENUMS_IGNORE_OLD_CAST_BEGIN","#         define BETTER_ENUMS_IGNORE_OLD_CAST_END","#         define BETTER_ENUMS_IGNORE_ATTRIBUTES_HEADER","#         define BETTER_ENUMS_IGNORE_ATTRIBUTES_BEGIN","#         define BETTER_ENUMS_IGNORE_ATTRIBUTES_END","#      endif","#   endif","#else // empty definitions for compilers that don't support _Pragma","#   define BETTER_ENUMS_IGNORE_OLD_CAST_HEADER","#   define BETTER_ENUMS_IGNORE_OLD_CAST_BEGIN","#   define BETTER_ENUMS_IGNORE_OLD_CAST_END","#   define BETTER_ENUMS_IGNORE_ATTRIBUTES_HEADER","#   define BETTER_ENUMS_IGNORE_ATTRIBUTES_BEGIN","#   define BETTER_ENUMS_IGNORE_ATTRIBUTES_END","#endif","","// Feature detection.","","#ifdef __GNUC__","#   ifdef __clang__","#       if __has_feature(cxx_constexpr)","#           define BETTER_ENUMS_HAVE_CONSTEXPR","#       endif","#       if !defined(__EXCEPTIONS) || !__has_feature(cxx_exceptions)","#           define BETTER_ENUMS_NO_EXCEPTIONS","#       endif","#   else","#       if defined(__GXX_EXPERIMENTAL_CXX0X__) || __cplusplus >= 201103L","#           if (__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 6))","#               define BETTER_ENUMS_HAVE_CONSTEXPR","#           endif","#       endif","#       ifndef __EXCEPTIONS","#           define BETTER_ENUMS_NO_EXCEPTIONS","#       endif","#   endif","#endif","","#ifdef _MSC_VER","#   if _MSC_VER >= 1911","#       define BETTER_ENUMS_HAVE_CONSTEXPR","#   endif","#   ifdef __clang__","#       if __has_feature(cxx_constexpr)","#           define BETTER_ENUMS_HAVE_CONSTEXPR","#       endif","#   endif","#   ifndef _CPPUNWIND","#       define BETTER_ENUMS_NO_EXCEPTIONS","#   endif","#   if _MSC_VER < 1600","#       define BETTER_ENUMS_VC2008_WORKAROUNDS","#   endif","#endif","","#ifdef BETTER_ENUMS_CONSTEXPR","#   define BETTER_ENUMS_HAVE_CONSTEXPR","#endif","","#ifdef BETTER_ENUMS_NO_CONSTEXPR","#   ifdef BETTER_ENUMS_HAVE_CONSTEXPR","#       undef BETTER_ENUMS_HAVE_CONSTEXPR","#   endif","#endif","","// GCC (and maybe clang) can be made to warn about using 0 or NULL when nullptr","// is available, so Better Enums tries to use nullptr. This passage uses","// availability of constexpr as a proxy for availability of nullptr, i.e. it","// assumes that nullptr is available when compiling on the right versions of gcc","// and clang with the right -std flag. This is actually slightly wrong, because","// nullptr is also available in Visual C++, but constexpr isn't. This","// imprecision doesn't matter, however, because VC++ doesn't have the warnings","// that make using nullptr necessary.","#ifdef BETTER_ENUMS_HAVE_CONSTEXPR","#   define BETTER_ENUMS_CONSTEXPR_     constexpr","#   define BETTER_ENUMS_NULLPTR        nullptr","#else","#   define BETTER_ENUMS_CONSTEXPR_","#   define BETTER_ENUMS_NULLPTR        NULL","#endif","","#ifndef BETTER_ENUMS_NO_EXCEPTIONS","#   define BETTER_ENUMS_IF_EXCEPTIONS(x) x","#else","#   define BETTER_ENUMS_IF_EXCEPTIONS(x)","#endif","","#ifdef __GNUC__","#   define BETTER_ENUMS_UNUSED __attribute__((__unused__))","#else","#   define BETTER_ENUMS_UNUSED","#endif","","","","// Higher-order preprocessor macros.","","#ifdef BETTER_ENUMS_MACRO_FILE","#   include BETTER_ENUMS_MACRO_FILE","#else","","#define BETTER_ENUMS_PP_MAP(macro, data, ...) \\","    BETTER_ENUMS_ID( \\","        BETTER_ENUMS_APPLY( \\","            BETTER_ENUMS_PP_MAP_VAR_COUNT, \\","            BETTER_ENUMS_PP_COUNT(__VA_ARGS__)) \\","        (macro, data, __VA_ARGS__))","","#define BETTER_ENUMS_PP_MAP_VAR_COUNT(count) BETTER_ENUMS_M ## count","","#define BETTER_ENUMS_APPLY(macro, ...) BETTER_ENUMS_ID(macro(__VA_ARGS__))","","#define BETTER_ENUMS_ID(x) x","","#define BETTER_ENUMS_M1(m, d, x) m(d,0,x)","#define BETTER_ENUMS_M2(m,d,x,...) m(d,1,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M1(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M3(m,d,x,...) m(d,2,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M2(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M4(m,d,x,...) m(d,3,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M3(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M5(m,d,x,...) m(d,4,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M4(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M6(m,d,x,...) m(d,5,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M5(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M7(m,d,x,...) m(d,6,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M6(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M8(m,d,x,...) m(d,7,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M7(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M9(m,d,x,...) m(d,8,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M8(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M10(m,d,x,...) m(d,9,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M9(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M11(m,d,x,...) m(d,10,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M10(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M12(m,d,x,...) m(d,11,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M11(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M13(m,d,x,...) m(d,12,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M12(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M14(m,d,x,...) m(d,13,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M13(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M15(m,d,x,...) m(d,14,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M14(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M16(m,d,x,...) m(d,15,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M15(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M17(m,d,x,...) m(d,16,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M16(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M18(m,d,x,...) m(d,17,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M17(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M19(m,d,x,...) m(d,18,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M18(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M20(m,d,x,...) m(d,19,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M19(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M21(m,d,x,...) m(d,20,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M20(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M22(m,d,x,...) m(d,21,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M21(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M23(m,d,x,...) m(d,22,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M22(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M24(m,d,x,...) m(d,23,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M23(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M25(m,d,x,...) m(d,24,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M24(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M26(m,d,x,...) m(d,25,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M25(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M27(m,d,x,...) m(d,26,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M26(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M28(m,d,x,...) m(d,27,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M27(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M29(m,d,x,...) m(d,28,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M28(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M30(m,d,x,...) m(d,29,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M29(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M31(m,d,x,...) m(d,30,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M30(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M32(m,d,x,...) m(d,31,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M31(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M33(m,d,x,...) m(d,32,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M32(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M34(m,d,x,...) m(d,33,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M33(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M35(m,d,x,...) m(d,34,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M34(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M36(m,d,x,...) m(d,35,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M35(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M37(m,d,x,...) m(d,36,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M36(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M38(m,d,x,...) m(d,37,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M37(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M39(m,d,x,...) m(d,38,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M38(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M40(m,d,x,...) m(d,39,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M39(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M41(m,d,x,...) m(d,40,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M40(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M42(m,d,x,...) m(d,41,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M41(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M43(m,d,x,...) m(d,42,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M42(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M44(m,d,x,...) m(d,43,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M43(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M45(m,d,x,...) m(d,44,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M44(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M46(m,d,x,...) m(d,45,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M45(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M47(m,d,x,...) m(d,46,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M46(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M48(m,d,x,...) m(d,47,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M47(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M49(m,d,x,...) m(d,48,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M48(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M50(m,d,x,...) m(d,49,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M49(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M51(m,d,x,...) m(d,50,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M50(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M52(m,d,x,...) m(d,51,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M51(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M53(m,d,x,...) m(d,52,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M52(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M54(m,d,x,...) m(d,53,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M53(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M55(m,d,x,...) m(d,54,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M54(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M56(m,d,x,...) m(d,55,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M55(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M57(m,d,x,...) m(d,56,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M56(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M58(m,d,x,...) m(d,57,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M57(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M59(m,d,x,...) m(d,58,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M58(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M60(m,d,x,...) m(d,59,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M59(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M61(m,d,x,...) m(d,60,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M60(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M62(m,d,x,...) m(d,61,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M61(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M63(m,d,x,...) m(d,62,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M62(m,d,__VA_ARGS__))","#define BETTER_ENUMS_M64(m,d,x,...) m(d,63,x) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_M63(m,d,__VA_ARGS__))","","#define BETTER_ENUMS_PP_COUNT_IMPL(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10,    \\","    _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, _21, _22, _23, _24, _25, \\","    _26, _27, _28, _29, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _40, \\","    _41, _42, _43, _44, _45, _46, _47, _48, _49, _50, _51, _52, _53, _54, _55, \\","    _56, _57, _58, _59, _60, _61, _62, _63, _64, count, ...) count","","#define BETTER_ENUMS_PP_COUNT(...) \\","    BETTER_ENUMS_ID(BETTER_ENUMS_PP_COUNT_IMPL(__VA_ARGS__, 64, 63, 62, 61, 60,\\","        59, 58, 57, 56, 55, 54, 53, 52, 51, 50, 49, 48, 47, 46, 45, 44, 43, 42,\\","        41, 40, 39, 38, 37, 36, 35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24,\\","        23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, \\","        4, 3, 2, 1))","","#define BETTER_ENUMS_ITERATE(X, f, l) X(f, l, 0) X(f, l, 1) X(f, l, 2)         \\","    X(f, l, 3) X(f, l, 4) X(f, l, 5) X(f, l, 6) X(f, l, 7) X(f, l, 8)          \\","    X(f, l, 9) X(f, l, 10) X(f, l, 11) X(f, l, 12) X(f, l, 13) X(f, l, 14)     \\","    X(f, l, 15) X(f, l, 16) X(f, l, 17) X(f, l, 18) X(f, l, 19) X(f, l, 20)    \\","    X(f, l, 21) X(f, l, 22) X(f, l, 23)","","#endif // #ifdef BETTER_ENUMS_MACRO_FILE else case","","","","namespace better_enums {","","","// Optional type.","","template <typename T>","BETTER_ENUMS_CONSTEXPR_ inline T _default()","{","    return static_cast<typename T::_enumerated>(0);","}","","template <>","BETTER_ENUMS_CONSTEXPR_ inline const char* _default<const char*>()","{","    return BETTER_ENUMS_NULLPTR;","}","","template <>","BETTER_ENUMS_CONSTEXPR_ inline std::size_t _default<std::size_t>()","{","    return 0;","}","","template <typename T>","struct optional {","    BETTER_ENUMS_CONSTEXPR_ optional() :","        _valid(false), _value(_default<T>()) { }","","    BETTER_ENUMS_CONSTEXPR_ optional(T v) : _valid(true), _value(v) { }","","    BETTER_ENUMS_CONSTEXPR_ const T& operator *() const { return _value; }","    BETTER_ENUMS_CONSTEXPR_ const T* operator ->() const { return &_value; }","","    BETTER_ENUMS_CONSTEXPR_ operator bool() const { return _valid; }","","    BETTER_ENUMS_CONSTEXPR_ const T& value() const { return _value; }","","  private:","    bool    _valid;","    T       _value;","};","","template <typename CastTo, typename Element>","BETTER_ENUMS_CONSTEXPR_ static optional<CastTo>","_map_index(const Element *array, optional<std::size_t> index)","{","    return index ? static_cast<CastTo>(array[*index]) : optional<CastTo>();","}","","#ifdef BETTER_ENUMS_VC2008_WORKAROUNDS","","#define BETTER_ENUMS_OR_THROW                                                  \\","    if (!maybe)                                                                \\","        throw std::runtime_error(message);                                     \\","                                                                               \\","    return *maybe;","","#else","","#define BETTER_ENUMS_OR_THROW                                                  \\","    return maybe ? *maybe : throw std::runtime_error(message);","","#endif","","BETTER_ENUMS_IF_EXCEPTIONS(","template <typename T>","BETTER_ENUMS_CONSTEXPR_ static T _or_throw(optional<T> maybe,","                                           const char *message)","{","    BETTER_ENUMS_OR_THROW","}",")","","template <typename T>","BETTER_ENUMS_CONSTEXPR_ static T* _or_null(optional<T*> maybe)","{","    return maybe ? *maybe : BETTER_ENUMS_NULLPTR;","}","","template <typename T>","BETTER_ENUMS_CONSTEXPR_ static T _or_zero(optional<T> maybe)","{","    return maybe ? *maybe : T::_from_integral_unchecked(0);","}","","","","// Functional sequencing. This is essentially a comma operator wrapped in a","// constexpr function. g++ 4.7 doesn't \"accept\" integral constants in the second","// position for the comma operator, and emits an external symbol, which then","// causes a linking error.","","template <typename T, typename U>","BETTER_ENUMS_CONSTEXPR_ U","continue_with(T, U value) { return value; }","","","","// Values array declaration helper.","","//! Get intrinsic value of an (Enum::value) by taking advantage of","// C-conversion's parentheses priority","template <typename EnumType>","struct _eat_assign {","    explicit BETTER_ENUMS_CONSTEXPR_ _eat_assign(EnumType value) : _value(value)","        { }","","    template <typename Any>","    BETTER_ENUMS_CONSTEXPR_ const _eat_assign&","    operator =(Any) const { return *this; }","","    BETTER_ENUMS_CONSTEXPR_ operator EnumType () const { return _value; }","","  private:","    EnumType    _value;","};","","","","// Iterables.","","template <typename Element>","struct _iterable {","    typedef const Element*  iterator;","","    BETTER_ENUMS_CONSTEXPR_ iterator begin() const { return iterator(_array); }","    BETTER_ENUMS_CONSTEXPR_ iterator end() const","        { return iterator(_array + _size); }","    BETTER_ENUMS_CONSTEXPR_ std::size_t size() const { return _size; }","    BETTER_ENUMS_CONSTEXPR_ const Element& operator [](std::size_t index) const","        { return _array[index]; }","","    BETTER_ENUMS_CONSTEXPR_ _iterable(const Element *array, std::size_t s) :","        _array(array), _size(s) { }","","  private:","    const Element * const   _array;","    const std::size_t       _size;","};","","","","// String routines.","","BETTER_ENUMS_CONSTEXPR_ static const char       *_name_enders = \"= \\t\\n\";","","BETTER_ENUMS_CONSTEXPR_ inline bool _ends_name(char c, std::size_t index = 0)","{","    return","        c == _name_enders[index] ? true  :","        _name_enders[index] == '\\0' ? false :","        _ends_name(c, index + 1);","}","","BETTER_ENUMS_CONSTEXPR_ inline bool _has_initializer(const char *s,","                                                     std::size_t index = 0)","{","    return","        s[index] == '\\0' ? false :","        s[index] == '=' ? true :","        _has_initializer(s, index + 1);","}","","BETTER_ENUMS_CONSTEXPR_ inline std::size_t","_constant_length(const char *s, std::size_t index = 0)","{","    return _ends_name(s[index]) ? index : _constant_length(s, index + 1);","}","","BETTER_ENUMS_CONSTEXPR_ inline char","_select(const char *from, std::size_t from_length, std::size_t index)","{","    return index >= from_length ? '\\0' : from[index];","}","","BETTER_ENUMS_CONSTEXPR_ inline char _to_lower_ascii(char c)","{","    return c >= 0x41 && c <= 0x5A ? static_cast<char>(c + 0x20) : c;","}","","BETTER_ENUMS_CONSTEXPR_ inline bool _names_match(const char *stringizedName,","                                                 const char *referenceName,","                                                 std::size_t index = 0)","{","    return","        _ends_name(stringizedName[index]) ? referenceName[index] == '\\0' :","        referenceName[index] == '\\0' ? false :","        stringizedName[index] != referenceName[index] ? false :","        _names_match(stringizedName, referenceName, index + 1);","}","","BETTER_ENUMS_CONSTEXPR_ inline bool","_names_match_nocase(const char *stringizedName, const char *referenceName,","                    std::size_t index = 0)","{","    return","        _ends_name(stringizedName[index]) ? referenceName[index] == '\\0' :","        referenceName[index] == '\\0' ? false :","        _to_lower_ascii(stringizedName[index]) !=","            _to_lower_ascii(referenceName[index]) ? false :","        _names_match_nocase(stringizedName, referenceName, index + 1);","}","","inline void _trim_names(const char * const *raw_names,","                        const char **trimmed_names,","                        char *storage, std::size_t count)","{","    std::size_t     offset = 0;","","    for (std::size_t index = 0; index < count; ++index) {","        trimmed_names[index] = storage + offset;","","        std::size_t trimmed_length =","            std::strcspn(raw_names[index], _name_enders);","        storage[offset + trimmed_length] = '\\0';","","        std::size_t raw_length = std::strlen(raw_names[index]);","        offset += raw_length + 1;","    }","}","","","","// Eager initialization.","template <typename Enum>","struct _initialize_at_program_start {","    _initialize_at_program_start() { Enum::initialize(); }","};","","} // namespace better_enums","","","","// Array generation macros.","","#define BETTER_ENUMS_EAT_ASSIGN_SINGLE(EnumType, index, expression)            \\","    (EnumType)((::better_enums::_eat_assign<EnumType>)EnumType::expression),","","#define BETTER_ENUMS_EAT_ASSIGN(EnumType, ...)                                 \\","    BETTER_ENUMS_ID(                                                           \\","        BETTER_ENUMS_PP_MAP(                                                   \\","            BETTER_ENUMS_EAT_ASSIGN_SINGLE, EnumType, __VA_ARGS__))","","","","#ifdef BETTER_ENUMS_HAVE_CONSTEXPR","","","","#define BETTER_ENUMS_SELECT_SINGLE_CHARACTER(from, from_length, index)         \\","    ::better_enums::_select(from, from_length, index),","","#define BETTER_ENUMS_SELECT_CHARACTERS(from, from_length)                      \\","    BETTER_ENUMS_ITERATE(                                                      \\","        BETTER_ENUMS_SELECT_SINGLE_CHARACTER, from, from_length)","","","","#define BETTER_ENUMS_TRIM_SINGLE_STRING(ignored, index, expression)            \\","constexpr std::size_t   _length_ ## index =                                    \\","    ::better_enums::_constant_length(#expression);                             \\","constexpr const char    _trimmed_ ## index [] =                                \\","    { BETTER_ENUMS_SELECT_CHARACTERS(#expression, _length_ ## index) };        \\","constexpr const char    *_final_ ## index =                                    \\","    ::better_enums::_has_initializer(#expression) ?                            \\","        _trimmed_ ## index : #expression;","","#define BETTER_ENUMS_TRIM_STRINGS(...)                                         \\","    BETTER_ENUMS_ID(                                                           \\","        BETTER_ENUMS_PP_MAP(                                                   \\","            BETTER_ENUMS_TRIM_SINGLE_STRING, ignored, __VA_ARGS__))","","","","#define BETTER_ENUMS_REFER_TO_SINGLE_STRING(ignored, index, expression)        \\","    _final_ ## index,","","#define BETTER_ENUMS_REFER_TO_STRINGS(...)                                     \\","    BETTER_ENUMS_ID(                                                           \\","        BETTER_ENUMS_PP_MAP(                                                   \\","            BETTER_ENUMS_REFER_TO_SINGLE_STRING, ignored, __VA_ARGS__))","","","","#endif // #ifdef BETTER_ENUMS_HAVE_CONSTEXPR","","","","#define BETTER_ENUMS_STRINGIZE_SINGLE(ignored, index, expression)  #expression,","","#define BETTER_ENUMS_STRINGIZE(...)                                            \\","    BETTER_ENUMS_ID(                                                           \\","        BETTER_ENUMS_PP_MAP(                                                   \\","            BETTER_ENUMS_STRINGIZE_SINGLE, ignored, __VA_ARGS__))","","#define BETTER_ENUMS_RESERVE_STORAGE_SINGLE(ignored, index, expression)        \\","    #expression \",\"","","#define BETTER_ENUMS_RESERVE_STORAGE(...)                                      \\","    BETTER_ENUMS_ID(                                                           \\","        BETTER_ENUMS_PP_MAP(                                                   \\","            BETTER_ENUMS_RESERVE_STORAGE_SINGLE, ignored, __VA_ARGS__))","","","","// The enums proper.","","#define BETTER_ENUMS_NS(EnumType)  better_enums_data_ ## EnumType","","#ifdef BETTER_ENUMS_VC2008_WORKAROUNDS","","#define BETTER_ENUMS_COPY_CONSTRUCTOR(Enum)                                    \\","        BETTER_ENUMS_CONSTEXPR_ Enum(const Enum &other) :                      \\","            _value(other._value) { }","","#else","","#define BETTER_ENUMS_COPY_CONSTRUCTOR(Enum)","","#endif","","#ifndef BETTER_ENUMS_CLASS_ATTRIBUTE","#   define BETTER_ENUMS_CLASS_ATTRIBUTE","#endif","","#define BETTER_ENUMS_TYPE(SetUnderlyingType, SwitchType, GenerateSwitchType,   \\","                          GenerateStrings, ToStringConstexpr,                  \\","                          DeclareInitialize, DefineInitialize, CallInitialize, \\","                          Enum, Underlying, ...)                               \\","                                                                               \\","namespace better_enums_data_ ## Enum {                                         \\","                                                                               \\","BETTER_ENUMS_ID(GenerateSwitchType(Underlying, __VA_ARGS__))                   \\","                                                                               \\","}                                                                              \\","                                                                               \\","class BETTER_ENUMS_CLASS_ATTRIBUTE Enum {                                      \\","  private:                                                                     \\","    typedef ::better_enums::optional<Enum>                  _optional;         \\","    typedef ::better_enums::optional<std::size_t>           _optional_index;   \\","                                                                               \\","  public:                                                                      \\","    typedef Underlying                                      _integral;         \\","                                                                               \\","    enum _enumerated SetUnderlyingType(Underlying) { __VA_ARGS__ };            \\","                                                                               \\","    BETTER_ENUMS_CONSTEXPR_ Enum(_enumerated value) : _value(value) { }        \\","                                                                               \\","    BETTER_ENUMS_COPY_CONSTRUCTOR(Enum)                                        \\","                                                                               \\","    BETTER_ENUMS_CONSTEXPR_ operator SwitchType(Enum)() const                  \\","    {                                                                          \\","        return SwitchType(Enum)(_value);                                       \\","    }                                                                          \\","                                                                               \\","    BETTER_ENUMS_CONSTEXPR_ _integral _to_integral() const;                    \\","    BETTER_ENUMS_IF_EXCEPTIONS(                                                \\","    BETTER_ENUMS_CONSTEXPR_ static Enum _from_integral(_integral value);       \\","    )                                                                          \\","    BETTER_ENUMS_CONSTEXPR_ static Enum                                        \\","    _from_integral_unchecked(_integral value);                                 \\","    BETTER_ENUMS_CONSTEXPR_ static _optional                                   \\","    _from_integral_nothrow(_integral value);                                   \\","                                                                               \\","    BETTER_ENUMS_CONSTEXPR_ std::size_t _to_index() const;                     \\","    BETTER_ENUMS_IF_EXCEPTIONS(                                                \\","    BETTER_ENUMS_CONSTEXPR_ static Enum _from_index(std::size_t index);        \\","    )                                                                          \\","    BETTER_ENUMS_CONSTEXPR_ static Enum                                        \\","    _from_index_unchecked(std::size_t index);                                  \\","    BETTER_ENUMS_CONSTEXPR_ static _optional                                   \\","    _from_index_nothrow(std::size_t index);                                    \\","                                                                               \\","    ToStringConstexpr const char* _to_string() const;                          \\","    BETTER_ENUMS_IF_EXCEPTIONS(                                                \\","    BETTER_ENUMS_CONSTEXPR_ static Enum _from_string(const char *name);        \\","    )                                                                          \\","    BETTER_ENUMS_CONSTEXPR_ static _optional                                   \\","    _from_string_nothrow(const char *name);                                    \\","                                                                               \\","    BETTER_ENUMS_IF_EXCEPTIONS(                                                \\","    BETTER_ENUMS_CONSTEXPR_ static Enum _from_string_nocase(const char *name); \\","    )                                                                          \\","    BETTER_ENUMS_CONSTEXPR_ static _optional                                   \\","    _from_string_nocase_nothrow(const char *name);                             \\","                                                                               \\","    BETTER_ENUMS_CONSTEXPR_ static bool _is_valid(_integral value);            \\","    BETTER_ENUMS_CONSTEXPR_ static bool _is_valid(const char *name);           \\","    BETTER_ENUMS_CONSTEXPR_ static bool _is_valid_nocase(const char *name);    \\","                                                                               \\","    typedef ::better_enums::_iterable<Enum>             _value_iterable;       \\","    typedef ::better_enums::_iterable<const char*>      _name_iterable;        \\","                                                                               \\","    typedef _value_iterable::iterator                   _value_iterator;       \\","    typedef _name_iterable::iterator                    _name_iterator;        \\","                                                                               \\","    BETTER_ENUMS_CONSTEXPR_ static const std::size_t _size_constant =          \\","        BETTER_ENUMS_ID(BETTER_ENUMS_PP_COUNT(__VA_ARGS__));                   \\","    BETTER_ENUMS_CONSTEXPR_ static std::size_t _size()                         \\","        { return _size_constant; }                                             \\","                                                                               \\","    BETTER_ENUMS_CONSTEXPR_ static const char* _name();                        \\","    BETTER_ENUMS_CONSTEXPR_ static _value_iterable _values();                  \\","    ToStringConstexpr static _name_iterable _names();                          \\","                                                                               \\","    _integral      _value;                                                     \\","                                                                               \\","    BETTER_ENUMS_DEFAULT_CONSTRUCTOR(Enum)                                     \\","                                                                               \\","  private:                                                                     \\","    explicit BETTER_ENUMS_CONSTEXPR_ Enum(const _integral &value) :            \\","        _value(value) { }                                                      \\","                                                                               \\","    DeclareInitialize                                                          \\","                                                                               \\","    BETTER_ENUMS_CONSTEXPR_ static _optional_index                             \\","    _from_value_loop(_integral value, std::size_t index = 0);                  \\","    BETTER_ENUMS_CONSTEXPR_ static _optional_index                             \\","    _from_string_loop(const char *name, std::size_t index = 0);                \\","    BETTER_ENUMS_CONSTEXPR_ static _optional_index                             \\","    _from_string_nocase_loop(const char *name, std::size_t index = 0);         \\","                                                                               \\","    friend struct ::better_enums::_initialize_at_program_start<Enum>;          \\","};                                                                             \\","                                                                               \\","namespace better_enums_data_ ## Enum {                                         \\","                                                                               \\","static ::better_enums::_initialize_at_program_start<Enum>                      \\","                                                _force_initialization;         \\","                                                                               \\","enum _putNamesInThisScopeAlso { __VA_ARGS__ };                                 \\","                                                                               \\","BETTER_ENUMS_IGNORE_OLD_CAST_HEADER                                            \\","BETTER_ENUMS_IGNORE_OLD_CAST_BEGIN                                             \\","BETTER_ENUMS_CONSTEXPR_ const Enum      _value_array[] =                       \\","    { BETTER_ENUMS_ID(BETTER_ENUMS_EAT_ASSIGN(Enum, __VA_ARGS__)) };           \\","BETTER_ENUMS_IGNORE_OLD_CAST_END                                               \\","                                                                               \\","BETTER_ENUMS_ID(GenerateStrings(Enum, __VA_ARGS__))                            \\","                                                                               \\","}                                                                              \\","                                                                               \\","BETTER_ENUMS_IGNORE_ATTRIBUTES_HEADER                                          \\","BETTER_ENUMS_IGNORE_ATTRIBUTES_BEGIN                                           \\","BETTER_ENUMS_UNUSED BETTER_ENUMS_CONSTEXPR_                                    \\","inline const Enum                                                              \\","operator +(Enum::_enumerated enumerated)                                       \\","{                                                                              \\","    return static_cast<Enum>(enumerated);                                      \\","}                                                                              \\","BETTER_ENUMS_IGNORE_ATTRIBUTES_END                                             \\","                                                                               \\","BETTER_ENUMS_CONSTEXPR_ inline Enum::_optional_index                           \\","Enum::_from_value_loop(Enum::_integral value, std::size_t index)               \\","{                                                                              \\","    return                                                                     \\","        index == _size() ?                                                     \\","            _optional_index() :                                                \\","            BETTER_ENUMS_NS(Enum)::_value_array[index]._value == value ?       \\","                _optional_index(index) :                                       \\","                _from_value_loop(value, index + 1);                            \\","}                                                                              \\","                                                                               \\","BETTER_ENUMS_CONSTEXPR_ inline Enum::_optional_index                           \\","Enum::_from_string_loop(const char *name, std::size_t index)                   \\","{                                                                              \\","    return                                                                     \\","        index == _size() ? _optional_index() :                                 \\","        ::better_enums::_names_match(                                          \\","            BETTER_ENUMS_NS(Enum)::_raw_names()[index], name) ?                \\","            _optional_index(index) :                                           \\","            _from_string_loop(name, index + 1);                                \\","}                                                                              \\","                                                                               \\","BETTER_ENUMS_CONSTEXPR_ inline Enum::_optional_index                           \\","Enum::_from_string_nocase_loop(const char *name, std::size_t index)            \\","{                                                                              \\","    return                                                                     \\","        index == _size() ? _optional_index() :                                 \\","            ::better_enums::_names_match_nocase(                               \\","                BETTER_ENUMS_NS(Enum)::_raw_names()[index], name) ?            \\","                    _optional_index(index) :                                   \\","                    _from_string_nocase_loop(name, index + 1);                 \\","}                                                                              \\","                                                                               \\","BETTER_ENUMS_CONSTEXPR_ inline Enum::_integral Enum::_to_integral() const      \\","{                                                                              \\","    return _integral(_value);                                                  \\","}                                                                              \\","                                                                               \\","BETTER_ENUMS_CONSTEXPR_ inline std::size_t Enum::_to_index() const             \\","{                                                                              \\","    return *_from_value_loop(_value);                                          \\","}                                                                              \\","                                                                               \\","BETTER_ENUMS_CONSTEXPR_ inline Enum                                            \\","Enum::_from_index_unchecked(std::size_t index)                                 \\","{                                                                              \\","    return                                                                     \\","        ::better_enums::_or_zero(_from_index_nothrow(index));                  \\","}                                                                              \\","                                                                               \\","BETTER_ENUMS_CONSTEXPR_ inline Enum::_optional                                 \\","Enum::_from_index_nothrow(std::size_t index)                                   \\","{                                                                              \\","    return                                                                     \\","        index >= _size() ?                                                     \\","            _optional() :                                                      \\","             _optional(BETTER_ENUMS_NS(Enum)::_value_array[index]);            \\","}                                                                              \\","                                                                               \\","BETTER_ENUMS_IF_EXCEPTIONS(                                                    \\","BETTER_ENUMS_CONSTEXPR_ inline Enum Enum::_from_index(std::size_t index)       \\","{                                                                              \\","    return                                                                     \\","        ::better_enums::_or_throw(_from_index_nothrow(index),                  \\","                                  #Enum \"::_from_index: invalid argument\");    \\","}                                                                              \\",")                                                                              \\","                                                                               \\","BETTER_ENUMS_CONSTEXPR_ inline Enum                                            \\","Enum::_from_integral_unchecked(_integral value)                                \\","{                                                                              \\","    return static_cast<_enumerated>(value);                                    \\","}                                                                              \\","                                                                               \\","BETTER_ENUMS_CONSTEXPR_ inline Enum::_optional                                 \\","Enum::_from_integral_nothrow(_integral value)                                  \\","{                                                                              \\","    return                                                                     \\","        ::better_enums::_map_index<Enum>(BETTER_ENUMS_NS(Enum)::_value_array,  \\","                                         _from_value_loop(value));             \\","}                                                                              \\","                                                                               \\","BETTER_ENUMS_IF_EXCEPTIONS(                                                    \\","BETTER_ENUMS_CONSTEXPR_ inline Enum Enum::_from_integral(_integral value)      \\","{                                                                              \\","    return                                                                     \\","        ::better_enums::_or_throw(_from_integral_nothrow(value),               \\","                                  #Enum \"::_from_integral: invalid argument\"); \\","}                                                                              \\",")                                                                              \\","                                                                               \\","ToStringConstexpr inline const char* Enum::_to_string() const                  \\","{                                                                              \\","    return                                                                     \\","        ::better_enums::_or_null(                                              \\","            ::better_enums::_map_index<const char*>(                           \\","                BETTER_ENUMS_NS(Enum)::_name_array(),                          \\","                _from_value_loop(CallInitialize(_value))));                    \\","}                                                                              \\","                                                                               \\","BETTER_ENUMS_CONSTEXPR_ inline Enum::_optional                                 \\","Enum::_from_string_nothrow(const char *name)                                   \\","{                                                                              \\","    return                                                                     \\","        ::better_enums::_map_index<Enum>(                                      \\","            BETTER_ENUMS_NS(Enum)::_value_array, _from_string_loop(name));     \\","}                                                                              \\","                                                                               \\","BETTER_ENUMS_IF_EXCEPTIONS(                                                    \\","BETTER_ENUMS_CONSTEXPR_ inline Enum Enum::_from_string(const char *name)       \\","{                                                                              \\","    return                                                                     \\","        ::better_enums::_or_throw(_from_string_nothrow(name),                  \\","                                  #Enum \"::_from_string: invalid argument\");   \\","}                                                                              \\",")                                                                              \\","                                                                               \\","BETTER_ENUMS_CONSTEXPR_ inline Enum::_optional                                 \\","Enum::_from_string_nocase_nothrow(const char *name)                            \\","{                                                                              \\","    return                                                                     \\","        ::better_enums::_map_index<Enum>(BETTER_ENUMS_NS(Enum)::_value_array,  \\","                                         _from_string_nocase_loop(name));      \\","}                                                                              \\","                                                                               \\","BETTER_ENUMS_IF_EXCEPTIONS(                                                    \\","BETTER_ENUMS_CONSTEXPR_ inline Enum Enum::_from_string_nocase(const char *name)\\","{                                                                              \\","    return                                                                     \\","        ::better_enums::_or_throw(                                             \\","            _from_string_nocase_nothrow(name),                                 \\","            #Enum \"::_from_string_nocase: invalid argument\");                  \\","}                                                                              \\",")                                                                              \\","                                                                               \\","BETTER_ENUMS_CONSTEXPR_ inline bool Enum::_is_valid(_integral value)           \\","{                                                                              \\","    return _from_value_loop(value);                                            \\","}                                                                              \\","                                                                               \\","BETTER_ENUMS_CONSTEXPR_ inline bool Enum::_is_valid(const char *name)          \\","{                                                                              \\","    return _from_string_loop(name);                                            \\","}                                                                              \\","                                                                               \\","BETTER_ENUMS_CONSTEXPR_ inline bool Enum::_is_valid_nocase(const char *name)   \\","{                                                                              \\","    return _from_string_nocase_loop(name);                                     \\","}                                                                              \\","                                                                               \\","BETTER_ENUMS_CONSTEXPR_ inline const char* Enum::_name()                       \\","{                                                                              \\","    return #Enum;                                                              \\","}                                                                              \\","                                                                               \\","BETTER_ENUMS_CONSTEXPR_ inline Enum::_value_iterable Enum::_values()           \\","{                                                                              \\","    return _value_iterable(BETTER_ENUMS_NS(Enum)::_value_array, _size());      \\","}                                                                              \\","                                                                               \\","ToStringConstexpr inline Enum::_name_iterable Enum::_names()                   \\","{                                                                              \\","    return                                                                     \\","        _name_iterable(BETTER_ENUMS_NS(Enum)::_name_array(),                   \\","                       CallInitialize(_size()));                               \\","}                                                                              \\","                                                                               \\","DefineInitialize(Enum)                                                         \\","                                                                               \\","BETTER_ENUMS_IGNORE_ATTRIBUTES_HEADER                                          \\","BETTER_ENUMS_IGNORE_ATTRIBUTES_BEGIN                                           \\","BETTER_ENUMS_UNUSED BETTER_ENUMS_CONSTEXPR_                                    \\","inline bool operator ==(const Enum &a, const Enum &b)                          \\","    { return a._to_integral() == b._to_integral(); }                           \\","                                                                               \\","BETTER_ENUMS_UNUSED BETTER_ENUMS_CONSTEXPR_                                    \\","inline bool operator !=(const Enum &a, const Enum &b)                          \\","    { return a._to_integral() != b._to_integral(); }                           \\","                                                                               \\","BETTER_ENUMS_UNUSED BETTER_ENUMS_CONSTEXPR_                                    \\","inline bool operator <(const Enum &a, const Enum &b)                           \\","    { return a._to_integral() < b._to_integral(); }                            \\","                                                                               \\","BETTER_ENUMS_UNUSED BETTER_ENUMS_CONSTEXPR_                                    \\","inline bool operator <=(const Enum &a, const Enum &b)                          \\","    { return a._to_integral() <= b._to_integral(); }                           \\","                                                                               \\","BETTER_ENUMS_UNUSED BETTER_ENUMS_CONSTEXPR_                                    \\","inline bool operator >(const Enum &a, const Enum &b)                           \\","    { return a._to_integral() > b._to_integral(); }                            \\","                                                                               \\","BETTER_ENUMS_UNUSED BETTER_ENUMS_CONSTEXPR_                                    \\","inline bool operator >=(const Enum &a, const Enum &b)                          \\","    { return a._to_integral() >= b._to_integral(); }                           \\","BETTER_ENUMS_IGNORE_ATTRIBUTES_END                                             \\","                                                                               \\","                                                                               \\","template <typename Char, typename Traits>                                      \\","std::basic_ostream<Char, Traits>&                                              \\","operator <<(std::basic_ostream<Char, Traits>& stream, const Enum &value)       \\","{                                                                              \\","    return stream << value._to_string();                                       \\","}                                                                              \\","                                                                               \\","template <typename Char, typename Traits>                                      \\","std::basic_istream<Char, Traits>&                                              \\","operator >>(std::basic_istream<Char, Traits>& stream, Enum &value)             \\","{                                                                              \\","    std::basic_string<Char, Traits>     buffer;                                \\","                                                                               \\","    stream >> buffer;                                                          \\","    ::better_enums::optional<Enum>      converted =                            \\","        Enum::_from_string_nothrow(buffer.c_str());                            \\","                                                                               \\","    if (converted)                                                             \\","        value = *converted;                                                    \\","    else                                                                       \\","        stream.setstate(std::basic_istream<Char, Traits>::failbit);            \\","                                                                               \\","    return stream;                                                             \\","}","","","","// Enum feature options.","","// C++98, C++11","#define BETTER_ENUMS_CXX98_UNDERLYING_TYPE(Underlying)","","// C++11","#define BETTER_ENUMS_CXX11_UNDERLYING_TYPE(Underlying)                         \\","    : Underlying","","#if defined(_MSC_VER) && _MSC_VER >= 1700","// VS 2012 and above fully support strongly typed enums and will warn about","// incorrect usage.","#   define BETTER_ENUMS_LEGACY_UNDERLYING_TYPE(Underlying) \\","        BETTER_ENUMS_CXX11_UNDERLYING_TYPE(Underlying)","#else","#   define BETTER_ENUMS_LEGACY_UNDERLYING_TYPE(Underlying) \\","        BETTER_ENUMS_CXX98_UNDERLYING_TYPE(Underlying)","#endif","","// C++98, C++11","#define BETTER_ENUMS_REGULAR_ENUM_SWITCH_TYPE(Type)                            \\","    _enumerated","","// C++11","#define BETTER_ENUMS_ENUM_CLASS_SWITCH_TYPE(Type)                              \\","    BETTER_ENUMS_NS(Type)::_enumClassForSwitchStatements","","// C++98, C++11","#define BETTER_ENUMS_REGULAR_ENUM_SWITCH_TYPE_GENERATE(Underlying, ...)","","// C++11","#define BETTER_ENUMS_ENUM_CLASS_SWITCH_TYPE_GENERATE(Underlying, ...)          \\","    enum class _enumClassForSwitchStatements : Underlying { __VA_ARGS__ };","","// C++98","#define BETTER_ENUMS_CXX98_TRIM_STRINGS_ARRAYS(Enum, ...)                      \\","    inline const char** _raw_names()                                           \\","    {                                                                          \\","        static const char   *value[] =                                         \\","            { BETTER_ENUMS_ID(BETTER_ENUMS_STRINGIZE(__VA_ARGS__)) };          \\","        return value;                                                          \\","    }                                                                          \\","                                                                               \\","    inline char* _name_storage()                                               \\","    {                                                                          \\","        static char         storage[] =                                        \\","            BETTER_ENUMS_ID(BETTER_ENUMS_RESERVE_STORAGE(__VA_ARGS__));        \\","        return storage;                                                        \\","    }                                                                          \\","                                                                               \\","    inline const char** _name_array()                                          \\","    {                                                                          \\","        static const char   *value[Enum::_size_constant];                      \\","        return value;                                                          \\","    }                                                                          \\","                                                                               \\","    inline bool& _initialized()                                                \\","    {                                                                          \\","        static bool         value = false;                                     \\","        return value;                                                          \\","    }","","// C++11 fast version","#define BETTER_ENUMS_CXX11_PARTIAL_CONSTEXPR_TRIM_STRINGS_ARRAYS(Enum, ...)    \\","    constexpr const char    *_the_raw_names[] =                                \\","        { BETTER_ENUMS_ID(BETTER_ENUMS_STRINGIZE(__VA_ARGS__)) };              \\","                                                                               \\","    constexpr const char * const * _raw_names()                                \\","    {                                                                          \\","        return _the_raw_names;                                                 \\","    }                                                                          \\","                                                                               \\","    inline char* _name_storage()                                               \\","    {                                                                          \\","        static char         storage[] =                                        \\","            BETTER_ENUMS_ID(BETTER_ENUMS_RESERVE_STORAGE(__VA_ARGS__));        \\","        return storage;                                                        \\","    }                                                                          \\","                                                                               \\","    inline const char** _name_array()                                          \\","    {                                                                          \\","        static const char   *value[Enum::_size_constant];                      \\","        return value;                                                          \\","    }                                                                          \\","                                                                               \\","    inline bool& _initialized()                                                \\","    {                                                                          \\","        static bool         value = false;                                     \\","        return value;                                                          \\","    }","","// C++11 slow all-constexpr version","#define BETTER_ENUMS_CXX11_FULL_CONSTEXPR_TRIM_STRINGS_ARRAYS(Enum, ...)       \\","    BETTER_ENUMS_ID(BETTER_ENUMS_TRIM_STRINGS(__VA_ARGS__))                    \\","                                                                               \\","    constexpr const char * const    _the_name_array[] =                        \\","        { BETTER_ENUMS_ID(BETTER_ENUMS_REFER_TO_STRINGS(__VA_ARGS__)) };       \\","                                                                               \\","    constexpr const char * const * _name_array()                               \\","    {                                                                          \\","        return _the_name_array;                                                \\","    }                                                                          \\","                                                                               \\","    constexpr const char * const * _raw_names()                                \\","    {                                                                          \\","        return _the_name_array;                                                \\","    }","","// C++98, C++11 fast version","#define BETTER_ENUMS_NO_CONSTEXPR_TO_STRING_KEYWORD","","// C++11 slow all-constexpr version","#define BETTER_ENUMS_CONSTEXPR_TO_STRING_KEYWORD                               \\","    constexpr","","// C++98, C++11 fast version","#define BETTER_ENUMS_DO_DECLARE_INITIALIZE                                     \\","    static int initialize();","","// C++11 slow all-constexpr version","#define BETTER_ENUMS_DECLARE_EMPTY_INITIALIZE                                  \\","    static int initialize() { return 0; }","","// C++98, C++11 fast version","#define BETTER_ENUMS_DO_DEFINE_INITIALIZE(Enum)                                \\","    inline int Enum::initialize()                                              \\","    {                                                                          \\","        if (BETTER_ENUMS_NS(Enum)::_initialized())                             \\","            return 0;                                                          \\","                                                                               \\","        ::better_enums::_trim_names(BETTER_ENUMS_NS(Enum)::_raw_names(),       \\","                                    BETTER_ENUMS_NS(Enum)::_name_array(),      \\","                                    BETTER_ENUMS_NS(Enum)::_name_storage(),    \\","                                    _size());                                  \\","                                                                               \\","        BETTER_ENUMS_NS(Enum)::_initialized() = true;                          \\","                                                                               \\","        return 0;                                                              \\","    }","","// C++11 slow all-constexpr version","#define BETTER_ENUMS_DO_NOT_DEFINE_INITIALIZE(Enum)","","// C++98, C++11 fast version","#define BETTER_ENUMS_DO_CALL_INITIALIZE(value)                                 \\","    ::better_enums::continue_with(initialize(), value)","","// C++11 slow all-constexpr version","#define BETTER_ENUMS_DO_NOT_CALL_INITIALIZE(value)                             \\","    value","","","","// User feature selection.","","#ifdef BETTER_ENUMS_STRICT_CONVERSION","#   define BETTER_ENUMS_DEFAULT_SWITCH_TYPE                                    \\","        BETTER_ENUMS_ENUM_CLASS_SWITCH_TYPE","#   define BETTER_ENUMS_DEFAULT_SWITCH_TYPE_GENERATE                           \\","        BETTER_ENUMS_ENUM_CLASS_SWITCH_TYPE_GENERATE","#else","#   define BETTER_ENUMS_DEFAULT_SWITCH_TYPE                                    \\","        BETTER_ENUMS_REGULAR_ENUM_SWITCH_TYPE","#   define BETTER_ENUMS_DEFAULT_SWITCH_TYPE_GENERATE                           \\","        BETTER_ENUMS_REGULAR_ENUM_SWITCH_TYPE_GENERATE","#endif","","","","#ifndef BETTER_ENUMS_DEFAULT_CONSTRUCTOR","#   define BETTER_ENUMS_DEFAULT_CONSTRUCTOR(Enum)                              \\","      private:                                                                 \\","        Enum() : _value(0) { }","#endif","","","","#ifdef BETTER_ENUMS_HAVE_CONSTEXPR","","#ifdef BETTER_ENUMS_CONSTEXPR_TO_STRING","#   define BETTER_ENUMS_DEFAULT_TRIM_STRINGS_ARRAYS                            \\","        BETTER_ENUMS_CXX11_FULL_CONSTEXPR_TRIM_STRINGS_ARRAYS","#   define BETTER_ENUMS_DEFAULT_TO_STRING_KEYWORD                              \\","        BETTER_ENUMS_CONSTEXPR_TO_STRING_KEYWORD","#   define BETTER_ENUMS_DEFAULT_DECLARE_INITIALIZE                             \\","        BETTER_ENUMS_DECLARE_EMPTY_INITIALIZE","#   define BETTER_ENUMS_DEFAULT_DEFINE_INITIALIZE                              \\","        BETTER_ENUMS_DO_NOT_DEFINE_INITIALIZE","#   define BETTER_ENUMS_DEFAULT_CALL_INITIALIZE                                \\","        BETTER_ENUMS_DO_NOT_CALL_INITIALIZE","#else","#   define BETTER_ENUMS_DEFAULT_TRIM_STRINGS_ARRAYS                            \\","        BETTER_ENUMS_CXX11_PARTIAL_CONSTEXPR_TRIM_STRINGS_ARRAYS","#   define BETTER_ENUMS_DEFAULT_TO_STRING_KEYWORD                              \\","        BETTER_ENUMS_NO_CONSTEXPR_TO_STRING_KEYWORD","#   define BETTER_ENUMS_DEFAULT_DECLARE_INITIALIZE                             \\","        BETTER_ENUMS_DO_DECLARE_INITIALIZE","#   define BETTER_ENUMS_DEFAULT_DEFINE_INITIALIZE                              \\","        BETTER_ENUMS_DO_DEFINE_INITIALIZE","#   define BETTER_ENUMS_DEFAULT_CALL_INITIALIZE                                \\","        BETTER_ENUMS_DO_CALL_INITIALIZE","#endif","","","","// Top-level macros.","","#define BETTER_ENUM(Enum, Underlying, ...)                                     \\","    BETTER_ENUMS_ID(BETTER_ENUMS_TYPE(                                         \\","        BETTER_ENUMS_CXX11_UNDERLYING_TYPE,                                    \\","        BETTER_ENUMS_DEFAULT_SWITCH_TYPE,                                      \\","        BETTER_ENUMS_DEFAULT_SWITCH_TYPE_GENERATE,                             \\","        BETTER_ENUMS_DEFAULT_TRIM_STRINGS_ARRAYS,                              \\","        BETTER_ENUMS_DEFAULT_TO_STRING_KEYWORD,                                \\","        BETTER_ENUMS_DEFAULT_DECLARE_INITIALIZE,                               \\","        BETTER_ENUMS_DEFAULT_DEFINE_INITIALIZE,                                \\","        BETTER_ENUMS_DEFAULT_CALL_INITIALIZE,                                  \\","        Enum, Underlying, __VA_ARGS__))","","#define SLOW_ENUM(Enum, Underlying, ...)                                       \\","    BETTER_ENUMS_ID(BETTER_ENUMS_TYPE(                                         \\","        BETTER_ENUMS_CXX11_UNDERLYING_TYPE,                                    \\","        BETTER_ENUMS_DEFAULT_SWITCH_TYPE,                                      \\","        BETTER_ENUMS_DEFAULT_SWITCH_TYPE_GENERATE,                             \\","        BETTER_ENUMS_CXX11_FULL_CONSTEXPR_TRIM_STRINGS_ARRAYS,                 \\","        BETTER_ENUMS_CONSTEXPR_TO_STRING_KEYWORD,                              \\","        BETTER_ENUMS_DECLARE_EMPTY_INITIALIZE,                                 \\","        BETTER_ENUMS_DO_NOT_DEFINE_INITIALIZE,                                 \\","        BETTER_ENUMS_DO_NOT_CALL_INITIALIZE,                                   \\","        Enum, Underlying, __VA_ARGS__))","","#else","","#define BETTER_ENUM(Enum, Underlying, ...)                                     \\","    BETTER_ENUMS_ID(BETTER_ENUMS_TYPE(                                         \\","        BETTER_ENUMS_LEGACY_UNDERLYING_TYPE,                                   \\","        BETTER_ENUMS_DEFAULT_SWITCH_TYPE,                                      \\","        BETTER_ENUMS_DEFAULT_SWITCH_TYPE_GENERATE,                             \\","        BETTER_ENUMS_CXX98_TRIM_STRINGS_ARRAYS,                                \\","        BETTER_ENUMS_NO_CONSTEXPR_TO_STRING_KEYWORD,                           \\","        BETTER_ENUMS_DO_DECLARE_INITIALIZE,                                    \\","        BETTER_ENUMS_DO_DEFINE_INITIALIZE,                                     \\","        BETTER_ENUMS_DO_CALL_INITIALIZE,                                       \\","        Enum, Underlying, __VA_ARGS__))","","#endif","","","","namespace better_enums {","","// Maps.","","template <typename T>","struct map_compare {","    BETTER_ENUMS_CONSTEXPR_ static bool less(const T& a, const T& b)","        { return a < b; }","};","","template <>","struct map_compare<const char*> {","    BETTER_ENUMS_CONSTEXPR_ static bool less(const char *a, const char *b)","        { return less_loop(a, b); }","","  private:","    BETTER_ENUMS_CONSTEXPR_ static bool","    less_loop(const char *a, const char *b, size_t index = 0)","    {","        return","            a[index] != b[index] ? a[index] < b[index] :","            a[index] == '\\0' ? false :","            less_loop(a, b, index + 1);","    }","};","","template <>","struct map_compare<const wchar_t*> {","    BETTER_ENUMS_CONSTEXPR_ static bool less(const wchar_t *a, const wchar_t *b)","        { return less_loop(a, b); }","","  private:","    BETTER_ENUMS_CONSTEXPR_ static bool","    less_loop(const wchar_t *a, const wchar_t *b, size_t index = 0)","    {","        return","            a[index] != b[index] ? a[index] < b[index] :","            a[index] == L'\\0' ? false :","            less_loop(a, b, index + 1);","    }","};","","template <typename Enum, typename T, typename Compare = map_compare<T> >","struct map {","    typedef T (*function)(Enum);","","    BETTER_ENUMS_CONSTEXPR_ explicit map(function f) : _f(f) { }","","    BETTER_ENUMS_CONSTEXPR_ T from_enum(Enum value) const { return _f(value); }","    BETTER_ENUMS_CONSTEXPR_ T operator [](Enum value) const","        { return _f(value); }","","    BETTER_ENUMS_CONSTEXPR_ Enum to_enum(T value) const","    {","        return","            _or_throw(to_enum_nothrow(value), \"map::to_enum: invalid argument\");","    }","","    BETTER_ENUMS_CONSTEXPR_ optional<Enum>","    to_enum_nothrow(T value, size_t index = 0) const","    {","        return","            index >= Enum::_size() ? optional<Enum>() :","            Compare::less(_f(Enum::_values()[index]), value) ||","            Compare::less(value, _f(Enum::_values()[index])) ?","                to_enum_nothrow(value, index + 1) :","            Enum::_values()[index];","    }","","  private:","    const function      _f;","};","","template <typename Enum, typename T>","BETTER_ENUMS_CONSTEXPR_ map<Enum, T> make_map(T (*f)(Enum))","{","    return map<Enum, T>(f);","}","","}","","#define BETTER_ENUMS_DECLARE_STD_HASH(type)                                    \\","    namespace std {                                                            \\","    template <> struct hash<type>                                              \\","    {                                                                          \\","        size_t operator()(const type &x) const                                 \\","        {                                                                      \\","            return std::hash<size_t>()(x._to_integral());                      \\","        }                                                                      \\","    };                                                                         \\","    }","","#endif // #ifndef BETTER_ENUMS_ENUM_H"],"stylingDirectives":[[{"start":0,"end":78,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":0,"end":79,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[],[{"start":1,"end":7,"cssClass":"pl-k"}],[],[{"start":1,"end":7,"cssClass":"pl-k"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":27,"cssClass":"pl-en"}],[],[],[],[{"start":1,"end":8,"cssClass":"pl-k"},{"start":9,"end":18,"cssClass":"pl-s"},{"start":9,"end":10,"cssClass":"pl-pds"},{"start":17,"end":18,"cssClass":"pl-pds"}],[{"start":1,"end":8,"cssClass":"pl-k"},{"start":9,"end":18,"cssClass":"pl-s"},{"start":9,"end":10,"cssClass":"pl-pds"},{"start":17,"end":18,"cssClass":"pl-pds"}],[{"start":1,"end":8,"cssClass":"pl-k"},{"start":9,"end":17,"cssClass":"pl-s"},{"start":9,"end":10,"cssClass":"pl-pds"},{"start":16,"end":17,"cssClass":"pl-pds"}],[{"start":1,"end":8,"cssClass":"pl-k"},{"start":9,"end":20,"cssClass":"pl-s"},{"start":9,"end":10,"cssClass":"pl-pds"},{"start":19,"end":20,"cssClass":"pl-pds"}],[],[],[{"start":0,"end":40,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":0,"end":63,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":1,"end":6,"cssClass":"pl-k"}],[{"start":4,"end":9,"cssClass":"pl-k"}],[{"start":7,"end":13,"cssClass":"pl-k"},{"start":14,"end":49,"cssClass":"pl-en"},{"start":50,"end":57,"cssClass":"pl-en"},{"start":58,"end":81,"cssClass":"pl-s"},{"start":58,"end":59,"cssClass":"pl-pds"},{"start":80,"end":81,"cssClass":"pl-pds"}],[{"start":7,"end":13,"cssClass":"pl-k"},{"start":14,"end":48,"cssClass":"pl-en"},{"start":49,"end":56,"cssClass":"pl-en"},{"start":57,"end":104,"cssClass":"pl-s"},{"start":57,"end":58,"cssClass":"pl-pds"},{"start":83,"end":85,"cssClass":"pl-cce"},{"start":101,"end":103,"cssClass":"pl-cce"},{"start":103,"end":104,"cssClass":"pl-pds"}],[{"start":7,"end":13,"cssClass":"pl-k"},{"start":14,"end":46,"cssClass":"pl-en"},{"start":47,"end":54,"cssClass":"pl-en"},{"start":55,"end":77,"cssClass":"pl-s"},{"start":55,"end":56,"cssClass":"pl-pds"},{"start":76,"end":77,"cssClass":"pl-pds"}],[{"start":7,"end":13,"cssClass":"pl-k"},{"start":14,"end":51,"cssClass":"pl-en"}],[{"start":7,"end":13,"cssClass":"pl-k"},{"start":14,"end":50,"cssClass":"pl-en"}],[{"start":7,"end":13,"cssClass":"pl-k"},{"start":14,"end":48,"cssClass":"pl-en"}],[{"start":4,"end":8,"cssClass":"pl-k"}],[{"start":7,"end":13,"cssClass":"pl-k"},{"start":14,"end":38,"cssClass":"pl-en"},{"start":51,"end":56,"cssClass":"pl-c1"},{"start":76,"end":79,"cssClass":"pl-c1"}],[{"start":7,"end":9,"cssClass":"pl-k"}],[{"start":10,"end":16,"cssClass":"pl-k"},{"start":17,"end":52,"cssClass":"pl-en"},{"start":53,"end":60,"cssClass":"pl-en"},{"start":61,"end":82,"cssClass":"pl-s"},{"start":61,"end":62,"cssClass":"pl-pds"},{"start":81,"end":82,"cssClass":"pl-pds"}],[{"start":10,"end":16,"cssClass":"pl-k"},{"start":17,"end":51,"cssClass":"pl-en"},{"start":52,"end":59,"cssClass":"pl-en"},{"start":60,"end":105,"cssClass":"pl-s"},{"start":60,"end":61,"cssClass":"pl-pds"},{"start":84,"end":86,"cssClass":"pl-cce"},{"start":102,"end":104,"cssClass":"pl-cce"},{"start":104,"end":105,"cssClass":"pl-pds"}],[{"start":10,"end":16,"cssClass":"pl-k"},{"start":17,"end":49,"cssClass":"pl-en"},{"start":50,"end":57,"cssClass":"pl-en"},{"start":58,"end":78,"cssClass":"pl-s"},{"start":58,"end":59,"cssClass":"pl-pds"},{"start":77,"end":78,"cssClass":"pl-pds"}],[{"start":10,"end":12,"cssClass":"pl-k"}],[{"start":16,"end":22,"cssClass":"pl-k"},{"start":23,"end":60,"cssClass":"pl-en"},{"start":61,"end":68,"cssClass":"pl-en"},{"start":69,"end":90,"cssClass":"pl-s"},{"start":69,"end":70,"cssClass":"pl-pds"},{"start":89,"end":90,"cssClass":"pl-pds"}],[{"start":16,"end":22,"cssClass":"pl-k"},{"start":23,"end":59,"cssClass":"pl-en"},{"start":60,"end":67,"cssClass":"pl-en"},{"start":68,"end":109,"cssClass":"pl-s"},{"start":68,"end":69,"cssClass":"pl-pds"},{"start":92,"end":94,"cssClass":"pl-cce"},{"start":106,"end":108,"cssClass":"pl-cce"},{"start":108,"end":109,"cssClass":"pl-pds"}],[{"start":16,"end":22,"cssClass":"pl-k"},{"start":23,"end":57,"cssClass":"pl-en"},{"start":58,"end":65,"cssClass":"pl-en"},{"start":66,"end":86,"cssClass":"pl-s"},{"start":66,"end":67,"cssClass":"pl-pds"},{"start":85,"end":86,"cssClass":"pl-pds"}],[{"start":10,"end":14,"cssClass":"pl-k"}],[{"start":16,"end":22,"cssClass":"pl-k"},{"start":23,"end":60,"cssClass":"pl-en"}],[{"start":16,"end":22,"cssClass":"pl-k"},{"start":23,"end":59,"cssClass":"pl-en"}],[{"start":16,"end":22,"cssClass":"pl-k"},{"start":23,"end":57,"cssClass":"pl-en"}],[{"start":10,"end":15,"cssClass":"pl-k"}],[{"start":7,"end":11,"cssClass":"pl-k"}],[{"start":10,"end":16,"cssClass":"pl-k"},{"start":17,"end":52,"cssClass":"pl-en"}],[{"start":10,"end":16,"cssClass":"pl-k"},{"start":17,"end":51,"cssClass":"pl-en"}],[{"start":10,"end":16,"cssClass":"pl-k"},{"start":17,"end":49,"cssClass":"pl-en"}],[{"start":10,"end":16,"cssClass":"pl-k"},{"start":17,"end":54,"cssClass":"pl-en"}],[{"start":10,"end":16,"cssClass":"pl-k"},{"start":17,"end":53,"cssClass":"pl-en"}],[{"start":10,"end":16,"cssClass":"pl-k"},{"start":17,"end":51,"cssClass":"pl-en"}],[{"start":7,"end":12,"cssClass":"pl-k"}],[{"start":4,"end":9,"cssClass":"pl-k"}],[{"start":1,"end":5,"cssClass":"pl-k"},{"start":6,"end":67,"cssClass":"pl-c"},{"start":6,"end":8,"cssClass":"pl-c"}],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":46,"cssClass":"pl-en"}],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":45,"cssClass":"pl-en"}],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":43,"cssClass":"pl-en"}],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":48,"cssClass":"pl-en"}],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":47,"cssClass":"pl-en"}],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":45,"cssClass":"pl-en"}],[{"start":1,"end":6,"cssClass":"pl-k"}],[],[{"start":0,"end":21,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[],[{"start":1,"end":6,"cssClass":"pl-k"}],[{"start":4,"end":9,"cssClass":"pl-k"}],[{"start":8,"end":10,"cssClass":"pl-k"}],[{"start":12,"end":18,"cssClass":"pl-k"},{"start":19,"end":46,"cssClass":"pl-en"}],[{"start":8,"end":13,"cssClass":"pl-k"}],[{"start":8,"end":10,"cssClass":"pl-k"}],[{"start":12,"end":18,"cssClass":"pl-k"},{"start":19,"end":45,"cssClass":"pl-en"}],[{"start":8,"end":13,"cssClass":"pl-k"}],[{"start":4,"end":8,"cssClass":"pl-k"}],[{"start":8,"end":10,"cssClass":"pl-k"}],[{"start":12,"end":14,"cssClass":"pl-k"}],[{"start":16,"end":22,"cssClass":"pl-k"},{"start":23,"end":50,"cssClass":"pl-en"}],[{"start":12,"end":17,"cssClass":"pl-k"}],[{"start":8,"end":13,"cssClass":"pl-k"}],[{"start":8,"end":14,"cssClass":"pl-k"}],[{"start":12,"end":18,"cssClass":"pl-k"},{"start":19,"end":45,"cssClass":"pl-en"}],[{"start":8,"end":13,"cssClass":"pl-k"}],[{"start":4,"end":9,"cssClass":"pl-k"}],[{"start":1,"end":6,"cssClass":"pl-k"}],[],[{"start":1,"end":6,"cssClass":"pl-k"}],[{"start":4,"end":6,"cssClass":"pl-k"}],[{"start":8,"end":14,"cssClass":"pl-k"},{"start":15,"end":42,"cssClass":"pl-en"}],[{"start":4,"end":9,"cssClass":"pl-k"}],[{"start":4,"end":9,"cssClass":"pl-k"}],[{"start":8,"end":10,"cssClass":"pl-k"}],[{"start":12,"end":18,"cssClass":"pl-k"},{"start":19,"end":46,"cssClass":"pl-en"}],[{"start":8,"end":13,"cssClass":"pl-k"}],[{"start":4,"end":9,"cssClass":"pl-k"}],[{"start":4,"end":10,"cssClass":"pl-k"}],[{"start":8,"end":14,"cssClass":"pl-k"},{"start":15,"end":41,"cssClass":"pl-en"}],[{"start":4,"end":9,"cssClass":"pl-k"}],[{"start":4,"end":6,"cssClass":"pl-k"}],[{"start":8,"end":14,"cssClass":"pl-k"},{"start":15,"end":46,"cssClass":"pl-en"}],[{"start":4,"end":9,"cssClass":"pl-k"}],[{"start":1,"end":6,"cssClass":"pl-k"}],[],[{"start":1,"end":6,"cssClass":"pl-k"}],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":38,"cssClass":"pl-en"}],[{"start":1,"end":6,"cssClass":"pl-k"}],[],[{"start":1,"end":6,"cssClass":"pl-k"}],[{"start":4,"end":9,"cssClass":"pl-k"}],[{"start":8,"end":13,"cssClass":"pl-k"}],[{"start":4,"end":9,"cssClass":"pl-k"}],[{"start":1,"end":6,"cssClass":"pl-k"}],[],[{"start":0,"end":79,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":0,"end":72,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":0,"end":76,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":0,"end":80,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":0,"end":79,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":0,"end":69,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":0,"end":78,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":0,"end":37,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":1,"end":6,"cssClass":"pl-k"}],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":34,"cssClass":"pl-en"},{"start":39,"end":48,"cssClass":"pl-k"}],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":31,"cssClass":"pl-en"},{"start":39,"end":46,"cssClass":"pl-c1"}],[{"start":1,"end":5,"cssClass":"pl-k"}],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":34,"cssClass":"pl-en"}],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":31,"cssClass":"pl-en"},{"start":39,"end":43,"cssClass":"pl-c1"}],[{"start":1,"end":6,"cssClass":"pl-k"}],[],[{"start":1,"end":7,"cssClass":"pl-k"}],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":37,"cssClass":"pl-en"},{"start":38,"end":39,"cssClass":"pl-v"}],[{"start":1,"end":5,"cssClass":"pl-k"}],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":37,"cssClass":"pl-en"},{"start":38,"end":39,"cssClass":"pl-v"}],[{"start":1,"end":6,"cssClass":"pl-k"}],[],[{"start":1,"end":6,"cssClass":"pl-k"}],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":30,"cssClass":"pl-en"},{"start":31,"end":44,"cssClass":"pl-en"}],[{"start":1,"end":5,"cssClass":"pl-k"}],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":30,"cssClass":"pl-en"}],[{"start":1,"end":6,"cssClass":"pl-k"}],[],[],[],[{"start":0,"end":36,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[],[{"start":1,"end":6,"cssClass":"pl-k"}],[{"start":4,"end":11,"cssClass":"pl-k"}],[{"start":1,"end":5,"cssClass":"pl-k"}],[],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":27,"cssClass":"pl-en"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":8,"end":26,"cssClass":"pl-en"}],[],[{"start":12,"end":33,"cssClass":"pl-en"}],[],[],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":37,"cssClass":"pl-en"},{"start":38,"end":43,"cssClass":"pl-v"}],[],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":26,"cssClass":"pl-en"}],[],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":23,"cssClass":"pl-en"},{"start":24,"end":25,"cssClass":"pl-v"}],[],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":23,"cssClass":"pl-en"},{"start":24,"end":31,"cssClass":"pl-v"},{"start":37,"end":38,"cssClass":"pl-c1"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":23,"cssClass":"pl-en"},{"start":39,"end":40,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":23,"cssClass":"pl-en"},{"start":39,"end":40,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":23,"cssClass":"pl-en"},{"start":39,"end":40,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":23,"cssClass":"pl-en"},{"start":39,"end":40,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":23,"cssClass":"pl-en"},{"start":39,"end":40,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":23,"cssClass":"pl-en"},{"start":39,"end":40,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":23,"cssClass":"pl-en"},{"start":39,"end":40,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":23,"cssClass":"pl-en"},{"start":39,"end":40,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":41,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":24,"cssClass":"pl-en"},{"start":40,"end":42,"cssClass":"pl-c1"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":34,"cssClass":"pl-en"}],[],[],[],[],[],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":29,"cssClass":"pl-en"}],[{"start":4,"end":19,"cssClass":"pl-en"},{"start":60,"end":62,"cssClass":"pl-c1"},{"start":64,"end":66,"cssClass":"pl-c1"},{"start":68,"end":70,"cssClass":"pl-c1"},{"start":72,"end":74,"cssClass":"pl-c1"},{"start":76,"end":78,"cssClass":"pl-c1"}],[{"start":8,"end":10,"cssClass":"pl-c1"},{"start":12,"end":14,"cssClass":"pl-c1"},{"start":16,"end":18,"cssClass":"pl-c1"},{"start":20,"end":22,"cssClass":"pl-c1"},{"start":24,"end":26,"cssClass":"pl-c1"},{"start":28,"end":30,"cssClass":"pl-c1"},{"start":32,"end":34,"cssClass":"pl-c1"},{"start":36,"end":38,"cssClass":"pl-c1"},{"start":40,"end":42,"cssClass":"pl-c1"},{"start":44,"end":46,"cssClass":"pl-c1"},{"start":48,"end":50,"cssClass":"pl-c1"},{"start":52,"end":54,"cssClass":"pl-c1"},{"start":56,"end":58,"cssClass":"pl-c1"},{"start":60,"end":62,"cssClass":"pl-c1"},{"start":64,"end":66,"cssClass":"pl-c1"},{"start":68,"end":70,"cssClass":"pl-c1"},{"start":72,"end":74,"cssClass":"pl-c1"},{"start":76,"end":78,"cssClass":"pl-c1"}],[{"start":8,"end":10,"cssClass":"pl-c1"},{"start":12,"end":14,"cssClass":"pl-c1"},{"start":16,"end":18,"cssClass":"pl-c1"},{"start":20,"end":22,"cssClass":"pl-c1"},{"start":24,"end":26,"cssClass":"pl-c1"},{"start":28,"end":30,"cssClass":"pl-c1"},{"start":32,"end":34,"cssClass":"pl-c1"},{"start":36,"end":38,"cssClass":"pl-c1"},{"start":40,"end":42,"cssClass":"pl-c1"},{"start":44,"end":46,"cssClass":"pl-c1"},{"start":48,"end":50,"cssClass":"pl-c1"},{"start":52,"end":54,"cssClass":"pl-c1"},{"start":56,"end":58,"cssClass":"pl-c1"},{"start":60,"end":62,"cssClass":"pl-c1"},{"start":64,"end":66,"cssClass":"pl-c1"},{"start":68,"end":70,"cssClass":"pl-c1"},{"start":72,"end":74,"cssClass":"pl-c1"},{"start":76,"end":78,"cssClass":"pl-c1"}],[{"start":8,"end":10,"cssClass":"pl-c1"},{"start":12,"end":14,"cssClass":"pl-c1"},{"start":16,"end":18,"cssClass":"pl-c1"},{"start":20,"end":22,"cssClass":"pl-c1"},{"start":24,"end":26,"cssClass":"pl-c1"},{"start":28,"end":30,"cssClass":"pl-c1"},{"start":32,"end":34,"cssClass":"pl-c1"},{"start":36,"end":38,"cssClass":"pl-c1"},{"start":40,"end":42,"cssClass":"pl-c1"},{"start":44,"end":46,"cssClass":"pl-c1"},{"start":48,"end":50,"cssClass":"pl-c1"},{"start":52,"end":54,"cssClass":"pl-c1"},{"start":56,"end":58,"cssClass":"pl-c1"},{"start":60,"end":62,"cssClass":"pl-c1"},{"start":64,"end":65,"cssClass":"pl-c1"},{"start":67,"end":68,"cssClass":"pl-c1"},{"start":70,"end":71,"cssClass":"pl-c1"},{"start":73,"end":74,"cssClass":"pl-c1"},{"start":76,"end":77,"cssClass":"pl-c1"}],[{"start":8,"end":9,"cssClass":"pl-c1"},{"start":11,"end":12,"cssClass":"pl-c1"},{"start":14,"end":15,"cssClass":"pl-c1"},{"start":17,"end":18,"cssClass":"pl-c1"}],[],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":28,"cssClass":"pl-en"},{"start":29,"end":36,"cssClass":"pl-v"},{"start":46,"end":47,"cssClass":"pl-c1"},{"start":57,"end":58,"cssClass":"pl-c1"},{"start":68,"end":69,"cssClass":"pl-c1"}],[{"start":4,"end":5,"cssClass":"pl-en"},{"start":12,"end":13,"cssClass":"pl-c1"},{"start":23,"end":24,"cssClass":"pl-c1"},{"start":34,"end":35,"cssClass":"pl-c1"},{"start":45,"end":46,"cssClass":"pl-c1"},{"start":56,"end":57,"cssClass":"pl-c1"},{"start":67,"end":68,"cssClass":"pl-c1"}],[{"start":12,"end":13,"cssClass":"pl-c1"},{"start":23,"end":25,"cssClass":"pl-c1"},{"start":35,"end":37,"cssClass":"pl-c1"},{"start":47,"end":49,"cssClass":"pl-c1"},{"start":59,"end":61,"cssClass":"pl-c1"},{"start":71,"end":73,"cssClass":"pl-c1"}],[{"start":12,"end":14,"cssClass":"pl-c1"},{"start":24,"end":26,"cssClass":"pl-c1"},{"start":36,"end":38,"cssClass":"pl-c1"},{"start":48,"end":50,"cssClass":"pl-c1"},{"start":60,"end":62,"cssClass":"pl-c1"},{"start":72,"end":74,"cssClass":"pl-c1"}],[{"start":12,"end":14,"cssClass":"pl-c1"},{"start":24,"end":26,"cssClass":"pl-c1"},{"start":36,"end":38,"cssClass":"pl-c1"}],[],[{"start":7,"end":50,"cssClass":"pl-c"},{"start":7,"end":9,"cssClass":"pl-c"}],[],[],[],[{"start":0,"end":9,"cssClass":"pl-k"},{"start":10,"end":22,"cssClass":"pl-en"}],[],[],[{"start":0,"end":17,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[],[{"start":0,"end":9,"cssClass":"pl-k"},{"start":10,"end":18,"cssClass":"pl-k"}],[{"start":24,"end":30,"cssClass":"pl-k"},{"start":33,"end":41,"cssClass":"pl-en"}],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":22,"cssClass":"pl-k"},{"start":23,"end":31,"cssClass":"pl-k"},{"start":48,"end":49,"cssClass":"pl-c1"}],[],[],[{"start":0,"end":9,"cssClass":"pl-k"}],[{"start":24,"end":30,"cssClass":"pl-k"},{"start":31,"end":36,"cssClass":"pl-k"},{"start":37,"end":41,"cssClass":"pl-k"},{"start":52,"end":57,"cssClass":"pl-k"},{"start":58,"end":62,"cssClass":"pl-k"}],[],[{"start":4,"end":10,"cssClass":"pl-k"}],[],[],[{"start":0,"end":9,"cssClass":"pl-k"}],[{"start":24,"end":30,"cssClass":"pl-k"},{"start":36,"end":42,"cssClass":"pl-c1"},{"start":57,"end":63,"cssClass":"pl-c1"}],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":12,"cssClass":"pl-c1"}],[],[],[{"start":0,"end":9,"cssClass":"pl-k"},{"start":10,"end":18,"cssClass":"pl-k"}],[{"start":0,"end":6,"cssClass":"pl-k"},{"start":7,"end":15,"cssClass":"pl-en"}],[{"start":28,"end":36,"cssClass":"pl-en"}],[{"start":15,"end":20,"cssClass":"pl-c1"}],[],[{"start":28,"end":36,"cssClass":"pl-en"},{"start":51,"end":55,"cssClass":"pl-c1"}],[],[{"start":28,"end":33,"cssClass":"pl-k"},{"start":37,"end":45,"cssClass":"pl-k"},{"start":50,"end":55,"cssClass":"pl-k"},{"start":58,"end":64,"cssClass":"pl-k"}],[{"start":28,"end":33,"cssClass":"pl-k"},{"start":37,"end":45,"cssClass":"pl-k"},{"start":51,"end":56,"cssClass":"pl-k"},{"start":59,"end":65,"cssClass":"pl-k"}],[],[{"start":28,"end":36,"cssClass":"pl-k"},{"start":37,"end":41,"cssClass":"pl-en"},{"start":44,"end":49,"cssClass":"pl-k"},{"start":52,"end":58,"cssClass":"pl-k"}],[],[{"start":28,"end":33,"cssClass":"pl-k"},{"start":37,"end":42,"cssClass":"pl-en"},{"start":45,"end":50,"cssClass":"pl-k"},{"start":53,"end":59,"cssClass":"pl-k"}],[],[{"start":2,"end":10,"cssClass":"pl-k"}],[{"start":4,"end":8,"cssClass":"pl-k"}],[],[],[],[{"start":0,"end":9,"cssClass":"pl-k"},{"start":10,"end":18,"cssClass":"pl-k"},{"start":27,"end":35,"cssClass":"pl-k"}],[{"start":24,"end":30,"cssClass":"pl-k"}],[{"start":0,"end":10,"cssClass":"pl-en"},{"start":11,"end":16,"cssClass":"pl-k"},{"start":47,"end":53,"cssClass":"pl-c1"}],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":16,"cssClass":"pl-c1"},{"start":19,"end":30,"cssClass":"pl-k"},{"start":46,"end":51,"cssClass":"pl-c1"}],[],[],[{"start":1,"end":6,"cssClass":"pl-k"}],[],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":29,"cssClass":"pl-en"}],[{"start":4,"end":6,"cssClass":"pl-k"}],[{"start":8,"end":13,"cssClass":"pl-k"},{"start":14,"end":32,"cssClass":"pl-en"}],[],[{"start":4,"end":10,"cssClass":"pl-k"}],[],[{"start":1,"end":5,"cssClass":"pl-k"}],[],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":29,"cssClass":"pl-en"}],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":28,"end":33,"cssClass":"pl-k"},{"start":34,"end":52,"cssClass":"pl-en"}],[],[{"start":1,"end":6,"cssClass":"pl-k"}],[],[{"start":0,"end":26,"cssClass":"pl-en"}],[{"start":0,"end":9,"cssClass":"pl-k"},{"start":10,"end":18,"cssClass":"pl-k"}],[{"start":24,"end":30,"cssClass":"pl-k"},{"start":33,"end":42,"cssClass":"pl-en"}],[{"start":43,"end":48,"cssClass":"pl-k"},{"start":49,"end":53,"cssClass":"pl-k"}],[],[],[],[],[],[{"start":0,"end":9,"cssClass":"pl-k"},{"start":10,"end":18,"cssClass":"pl-k"}],[{"start":24,"end":30,"cssClass":"pl-k"},{"start":34,"end":42,"cssClass":"pl-en"}],[],[{"start":4,"end":10,"cssClass":"pl-k"}],[],[],[{"start":0,"end":9,"cssClass":"pl-k"},{"start":10,"end":18,"cssClass":"pl-k"}],[{"start":24,"end":30,"cssClass":"pl-k"},{"start":33,"end":41,"cssClass":"pl-en"}],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":28,"end":55,"cssClass":"pl-c1"},{"start":56,"end":57,"cssClass":"pl-c1"}],[],[],[],[],[{"start":0,"end":75,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":0,"end":80,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":0,"end":76,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":0,"end":26,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[],[{"start":0,"end":9,"cssClass":"pl-k"},{"start":10,"end":18,"cssClass":"pl-k"},{"start":22,"end":30,"cssClass":"pl-k"}],[],[{"start":0,"end":13,"cssClass":"pl-en"},{"start":28,"end":34,"cssClass":"pl-k"}],[],[],[],[{"start":0,"end":35,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[],[{"start":0,"end":66,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":0,"end":38,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":0,"end":9,"cssClass":"pl-k"},{"start":10,"end":18,"cssClass":"pl-k"}],[{"start":0,"end":6,"cssClass":"pl-k"},{"start":7,"end":18,"cssClass":"pl-en"}],[{"start":4,"end":12,"cssClass":"pl-k"},{"start":37,"end":48,"cssClass":"pl-en"}],[],[],[{"start":4,"end":13,"cssClass":"pl-k"},{"start":14,"end":22,"cssClass":"pl-k"}],[{"start":28,"end":33,"cssClass":"pl-k"}],[{"start":4,"end":12,"cssClass":"pl-k"},{"start":20,"end":25,"cssClass":"pl-k"},{"start":28,"end":34,"cssClass":"pl-k"},{"start":36,"end":40,"cssClass":"pl-c1"}],[],[{"start":28,"end":36,"cssClass":"pl-k"},{"start":37,"end":45,"cssClass":"pl-en"},{"start":49,"end":54,"cssClass":"pl-k"},{"start":57,"end":63,"cssClass":"pl-k"}],[],[{"start":2,"end":10,"cssClass":"pl-k"}],[],[],[],[],[],[{"start":0,"end":13,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[],[{"start":0,"end":9,"cssClass":"pl-k"},{"start":10,"end":18,"cssClass":"pl-k"}],[{"start":0,"end":6,"cssClass":"pl-k"},{"start":7,"end":16,"cssClass":"pl-en"}],[{"start":4,"end":11,"cssClass":"pl-k"},{"start":12,"end":17,"cssClass":"pl-k"}],[],[{"start":37,"end":42,"cssClass":"pl-en"},{"start":45,"end":50,"cssClass":"pl-k"},{"start":53,"end":59,"cssClass":"pl-k"},{"start":60,"end":68,"cssClass":"pl-c1"}],[{"start":37,"end":40,"cssClass":"pl-en"},{"start":43,"end":48,"cssClass":"pl-k"}],[{"start":10,"end":16,"cssClass":"pl-k"},{"start":17,"end":25,"cssClass":"pl-c1"}],[{"start":33,"end":39,"cssClass":"pl-c1"},{"start":40,"end":44,"cssClass":"pl-en"},{"start":47,"end":52,"cssClass":"pl-k"},{"start":55,"end":61,"cssClass":"pl-k"}],[{"start":28,"end":33,"cssClass":"pl-k"},{"start":43,"end":51,"cssClass":"pl-k"},{"start":60,"end":66,"cssClass":"pl-c1"},{"start":74,"end":79,"cssClass":"pl-k"}],[{"start":10,"end":16,"cssClass":"pl-k"},{"start":24,"end":29,"cssClass":"pl-c1"}],[],[{"start":28,"end":37,"cssClass":"pl-en"},{"start":38,"end":43,"cssClass":"pl-k"},{"start":65,"end":71,"cssClass":"pl-c1"}],[],[],[{"start":2,"end":10,"cssClass":"pl-k"}],[{"start":4,"end":9,"cssClass":"pl-k"},{"start":20,"end":25,"cssClass":"pl-k"}],[{"start":4,"end":9,"cssClass":"pl-k"},{"start":15,"end":21,"cssClass":"pl-c1"}],[],[],[],[],[{"start":0,"end":19,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[],[{"start":24,"end":30,"cssClass":"pl-k"},{"start":31,"end":36,"cssClass":"pl-k"},{"start":37,"end":41,"cssClass":"pl-k"},{"start":64,"end":72,"cssClass":"pl-s"},{"start":64,"end":65,"cssClass":"pl-pds"},{"start":67,"end":71,"cssClass":"pl-cce"},{"start":71,"end":72,"cssClass":"pl-pds"}],[],[{"start":24,"end":30,"cssClass":"pl-k"},{"start":31,"end":35,"cssClass":"pl-k"},{"start":36,"end":46,"cssClass":"pl-en"},{"start":47,"end":51,"cssClass":"pl-k"},{"start":60,"end":66,"cssClass":"pl-c1"},{"start":75,"end":76,"cssClass":"pl-c1"}],[],[{"start":4,"end":10,"cssClass":"pl-k"}],[{"start":26,"end":31,"cssClass":"pl-c1"},{"start":35,"end":39,"cssClass":"pl-c1"}],[{"start":21,"end":26,"cssClass":"pl-c1"},{"start":31,"end":35,"cssClass":"pl-s"},{"start":31,"end":32,"cssClass":"pl-pds"},{"start":32,"end":34,"cssClass":"pl-cce"},{"start":34,"end":35,"cssClass":"pl-pds"},{"start":38,"end":43,"cssClass":"pl-c1"}],[{"start":8,"end":18,"cssClass":"pl-c1"},{"start":22,"end":27,"cssClass":"pl-c1"},{"start":30,"end":31,"cssClass":"pl-c1"}],[],[],[{"start":24,"end":30,"cssClass":"pl-k"},{"start":31,"end":35,"cssClass":"pl-k"},{"start":36,"end":52,"cssClass":"pl-en"},{"start":53,"end":58,"cssClass":"pl-k"},{"start":59,"end":63,"cssClass":"pl-k"}],[{"start":58,"end":64,"cssClass":"pl-c1"},{"start":73,"end":74,"cssClass":"pl-c1"}],[],[{"start":4,"end":10,"cssClass":"pl-k"}],[{"start":10,"end":15,"cssClass":"pl-c1"},{"start":20,"end":24,"cssClass":"pl-s"},{"start":20,"end":21,"cssClass":"pl-pds"},{"start":21,"end":23,"cssClass":"pl-cce"},{"start":23,"end":24,"cssClass":"pl-pds"},{"start":27,"end":32,"cssClass":"pl-c1"}],[{"start":10,"end":15,"cssClass":"pl-c1"},{"start":20,"end":23,"cssClass":"pl-s"},{"start":20,"end":21,"cssClass":"pl-pds"},{"start":22,"end":23,"cssClass":"pl-pds"},{"start":26,"end":30,"cssClass":"pl-c1"}],[{"start":8,"end":24,"cssClass":"pl-c1"},{"start":28,"end":33,"cssClass":"pl-c1"},{"start":36,"end":37,"cssClass":"pl-c1"}],[],[],[{"start":24,"end":30,"cssClass":"pl-k"},{"start":36,"end":42,"cssClass":"pl-c1"}],[{"start":0,"end":16,"cssClass":"pl-en"},{"start":17,"end":22,"cssClass":"pl-k"},{"start":23,"end":27,"cssClass":"pl-k"},{"start":37,"end":43,"cssClass":"pl-c1"},{"start":52,"end":53,"cssClass":"pl-c1"}],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":21,"cssClass":"pl-c1"},{"start":24,"end":29,"cssClass":"pl-c1"},{"start":34,"end":39,"cssClass":"pl-c1"},{"start":42,"end":58,"cssClass":"pl-c1"},{"start":62,"end":67,"cssClass":"pl-c1"},{"start":70,"end":71,"cssClass":"pl-c1"}],[],[],[{"start":24,"end":30,"cssClass":"pl-k"},{"start":31,"end":35,"cssClass":"pl-k"}],[{"start":0,"end":7,"cssClass":"pl-en"},{"start":8,"end":13,"cssClass":"pl-k"},{"start":14,"end":18,"cssClass":"pl-k"},{"start":31,"end":37,"cssClass":"pl-c1"},{"start":56,"end":62,"cssClass":"pl-c1"}],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":16,"cssClass":"pl-c1"},{"start":34,"end":38,"cssClass":"pl-s"},{"start":34,"end":35,"cssClass":"pl-pds"},{"start":35,"end":37,"cssClass":"pl-cce"},{"start":37,"end":38,"cssClass":"pl-pds"},{"start":46,"end":51,"cssClass":"pl-c1"}],[],[],[{"start":24,"end":30,"cssClass":"pl-k"},{"start":31,"end":35,"cssClass":"pl-k"},{"start":36,"end":51,"cssClass":"pl-en"},{"start":52,"end":56,"cssClass":"pl-k"}],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":16,"end":20,"cssClass":"pl-c1"},{"start":29,"end":33,"cssClass":"pl-c1"},{"start":36,"end":47,"cssClass":"pl-k"},{"start":48,"end":52,"cssClass":"pl-k"},{"start":58,"end":62,"cssClass":"pl-c1"}],[],[],[{"start":24,"end":30,"cssClass":"pl-k"},{"start":31,"end":35,"cssClass":"pl-k"},{"start":36,"end":48,"cssClass":"pl-en"},{"start":49,"end":54,"cssClass":"pl-k"},{"start":55,"end":59,"cssClass":"pl-k"}],[{"start":49,"end":54,"cssClass":"pl-k"},{"start":55,"end":59,"cssClass":"pl-k"}],[{"start":54,"end":60,"cssClass":"pl-c1"},{"start":69,"end":70,"cssClass":"pl-c1"}],[],[{"start":4,"end":10,"cssClass":"pl-k"}],[{"start":8,"end":18,"cssClass":"pl-c1"},{"start":34,"end":39,"cssClass":"pl-c1"},{"start":58,"end":63,"cssClass":"pl-c1"},{"start":68,"end":72,"cssClass":"pl-s"},{"start":68,"end":69,"cssClass":"pl-pds"},{"start":69,"end":71,"cssClass":"pl-cce"},{"start":71,"end":72,"cssClass":"pl-pds"}],[{"start":22,"end":27,"cssClass":"pl-c1"},{"start":32,"end":36,"cssClass":"pl-s"},{"start":32,"end":33,"cssClass":"pl-pds"},{"start":33,"end":35,"cssClass":"pl-cce"},{"start":35,"end":36,"cssClass":"pl-pds"},{"start":39,"end":44,"cssClass":"pl-c1"}],[{"start":23,"end":28,"cssClass":"pl-c1"},{"start":47,"end":52,"cssClass":"pl-c1"},{"start":56,"end":61,"cssClass":"pl-c1"}],[{"start":8,"end":20,"cssClass":"pl-c1"},{"start":52,"end":57,"cssClass":"pl-c1"},{"start":60,"end":61,"cssClass":"pl-c1"}],[],[],[{"start":24,"end":30,"cssClass":"pl-k"},{"start":31,"end":35,"cssClass":"pl-k"}],[{"start":0,"end":19,"cssClass":"pl-en"},{"start":20,"end":25,"cssClass":"pl-k"},{"start":26,"end":30,"cssClass":"pl-k"},{"start":48,"end":53,"cssClass":"pl-k"},{"start":54,"end":58,"cssClass":"pl-k"}],[{"start":25,"end":31,"cssClass":"pl-c1"},{"start":40,"end":41,"cssClass":"pl-c1"}],[],[{"start":4,"end":10,"cssClass":"pl-k"}],[{"start":8,"end":18,"cssClass":"pl-c1"},{"start":34,"end":39,"cssClass":"pl-c1"},{"start":58,"end":63,"cssClass":"pl-c1"},{"start":68,"end":72,"cssClass":"pl-s"},{"start":68,"end":69,"cssClass":"pl-pds"},{"start":69,"end":71,"cssClass":"pl-cce"},{"start":71,"end":72,"cssClass":"pl-pds"}],[{"start":22,"end":27,"cssClass":"pl-c1"},{"start":32,"end":36,"cssClass":"pl-s"},{"start":32,"end":33,"cssClass":"pl-pds"},{"start":33,"end":35,"cssClass":"pl-cce"},{"start":35,"end":36,"cssClass":"pl-pds"},{"start":39,"end":44,"cssClass":"pl-c1"}],[{"start":8,"end":23,"cssClass":"pl-c1"},{"start":39,"end":44,"cssClass":"pl-c1"}],[{"start":12,"end":27,"cssClass":"pl-c1"},{"start":42,"end":47,"cssClass":"pl-c1"},{"start":52,"end":57,"cssClass":"pl-c1"}],[{"start":8,"end":27,"cssClass":"pl-c1"},{"start":59,"end":64,"cssClass":"pl-c1"},{"start":67,"end":68,"cssClass":"pl-c1"}],[],[],[{"start":0,"end":6,"cssClass":"pl-k"},{"start":7,"end":11,"cssClass":"pl-k"},{"start":12,"end":23,"cssClass":"pl-en"},{"start":24,"end":29,"cssClass":"pl-k"},{"start":30,"end":34,"cssClass":"pl-k"},{"start":37,"end":42,"cssClass":"pl-k"}],[{"start":24,"end":29,"cssClass":"pl-k"},{"start":30,"end":34,"cssClass":"pl-k"}],[{"start":24,"end":28,"cssClass":"pl-k"},{"start":44,"end":50,"cssClass":"pl-c1"}],[],[{"start":9,"end":15,"cssClass":"pl-c1"},{"start":29,"end":30,"cssClass":"pl-c1"}],[],[{"start":4,"end":7,"cssClass":"pl-k"},{"start":14,"end":20,"cssClass":"pl-c1"},{"start":21,"end":26,"cssClass":"pl-c1"},{"start":29,"end":30,"cssClass":"pl-c1"},{"start":32,"end":37,"cssClass":"pl-c1"},{"start":49,"end":54,"cssClass":"pl-c1"}],[{"start":22,"end":27,"cssClass":"pl-c1"}],[],[{"start":13,"end":19,"cssClass":"pl-c1"}],[{"start":12,"end":24,"cssClass":"pl-c1"},{"start":35,"end":40,"cssClass":"pl-c1"}],[{"start":43,"end":47,"cssClass":"pl-s"},{"start":43,"end":44,"cssClass":"pl-pds"},{"start":44,"end":46,"cssClass":"pl-cce"},{"start":46,"end":47,"cssClass":"pl-pds"}],[],[{"start":13,"end":19,"cssClass":"pl-c1"},{"start":33,"end":44,"cssClass":"pl-c1"},{"start":55,"end":60,"cssClass":"pl-c1"}],[{"start":31,"end":32,"cssClass":"pl-c1"}],[],[],[],[],[],[{"start":0,"end":24,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":0,"end":9,"cssClass":"pl-k"},{"start":10,"end":18,"cssClass":"pl-k"}],[{"start":0,"end":6,"cssClass":"pl-k"},{"start":7,"end":35,"cssClass":"pl-en"}],[{"start":4,"end":32,"cssClass":"pl-en"},{"start":37,"end":53,"cssClass":"pl-c1"}],[],[],[{"start":2,"end":27,"cssClass":"pl-c"},{"start":2,"end":4,"cssClass":"pl-c"}],[],[],[],[{"start":0,"end":27,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":38,"cssClass":"pl-en"},{"start":39,"end":66,"cssClass":"pl-v"}],[],[],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":31,"cssClass":"pl-en"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":8,"end":27,"cssClass":"pl-en"}],[],[],[],[],[{"start":1,"end":6,"cssClass":"pl-k"}],[],[],[],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":44,"cssClass":"pl-en"},{"start":45,"end":69,"cssClass":"pl-v"}],[{"start":4,"end":27,"cssClass":"pl-en"}],[],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":38,"cssClass":"pl-en"},{"start":39,"end":56,"cssClass":"pl-v"}],[{"start":4,"end":24,"cssClass":"pl-en"}],[],[],[],[],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":39,"cssClass":"pl-en"},{"start":40,"end":66,"cssClass":"pl-v"}],[{"start":0,"end":9,"cssClass":"pl-k"},{"start":15,"end":21,"cssClass":"pl-c1"}],[{"start":4,"end":36,"cssClass":"pl-en"}],[{"start":0,"end":9,"cssClass":"pl-k"},{"start":10,"end":15,"cssClass":"pl-k"},{"start":16,"end":20,"cssClass":"pl-k"}],[{"start":6,"end":36,"cssClass":"pl-c1"},{"start":62,"end":67,"cssClass":"pl-c1"}],[{"start":0,"end":9,"cssClass":"pl-k"},{"start":10,"end":15,"cssClass":"pl-k"},{"start":16,"end":20,"cssClass":"pl-k"}],[{"start":4,"end":36,"cssClass":"pl-en"}],[],[],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":33,"cssClass":"pl-en"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":8,"end":27,"cssClass":"pl-en"}],[],[],[],[],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":43,"cssClass":"pl-en"},{"start":44,"end":70,"cssClass":"pl-v"}],[],[],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":37,"cssClass":"pl-en"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":8,"end":27,"cssClass":"pl-en"}],[],[],[],[],[{"start":7,"end":44,"cssClass":"pl-c"},{"start":7,"end":9,"cssClass":"pl-c"}],[],[],[],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":37,"cssClass":"pl-en"},{"start":38,"end":64,"cssClass":"pl-v"}],[],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":30,"cssClass":"pl-en"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":8,"end":27,"cssClass":"pl-en"}],[],[],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":43,"cssClass":"pl-en"},{"start":44,"end":70,"cssClass":"pl-v"}],[{"start":16,"end":19,"cssClass":"pl-s"},{"start":16,"end":17,"cssClass":"pl-pds"},{"start":18,"end":19,"cssClass":"pl-pds"}],[],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":36,"cssClass":"pl-en"}],[{"start":4,"end":19,"cssClass":"pl-en"}],[{"start":8,"end":27,"cssClass":"pl-en"}],[],[],[],[],[{"start":0,"end":20,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":23,"cssClass":"pl-en"},{"start":24,"end":32,"cssClass":"pl-v"}],[],[{"start":1,"end":6,"cssClass":"pl-k"}],[],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":37,"cssClass":"pl-en"},{"start":38,"end":42,"cssClass":"pl-v"}],[{"start":32,"end":36,"cssClass":"pl-en"},{"start":37,"end":42,"cssClass":"pl-k"}],[],[],[{"start":1,"end":5,"cssClass":"pl-k"}],[],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":37,"cssClass":"pl-en"},{"start":38,"end":42,"cssClass":"pl-v"}],[],[{"start":1,"end":6,"cssClass":"pl-k"}],[],[{"start":1,"end":7,"cssClass":"pl-k"}],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":39,"cssClass":"pl-en"}],[{"start":1,"end":6,"cssClass":"pl-k"}],[],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":25,"cssClass":"pl-en"}],[],[],[],[],[],[],[{"start":0,"end":15,"cssClass":"pl-c1"},{"start":16,"end":34,"cssClass":"pl-c1"}],[],[],[],[{"start":0,"end":5,"cssClass":"pl-k"},{"start":6,"end":34,"cssClass":"pl-en"}],[{"start":2,"end":10,"cssClass":"pl-k"}],[{"start":4,"end":11,"cssClass":"pl-k"}],[{"start":4,"end":11,"cssClass":"pl-k"},{"start":42,"end":48,"cssClass":"pl-c1"}],[],[{"start":2,"end":9,"cssClass":"pl-k"}],[{"start":4,"end":11,"cssClass":"pl-k"}],[],[{"start":4,"end":8,"cssClass":"pl-k"},{"start":21,"end":38,"cssClass":"pl-en"}],[],[{"start":28,"end":32,"cssClass":"pl-en"}],[],[{"start":4,"end":33,"cssClass":"pl-en"}],[],[{"start":28,"end":36,"cssClass":"pl-k"},{"start":37,"end":47,"cssClass":"pl-en"},{"start":56,"end":61,"cssClass":"pl-k"}],[],[{"start":8,"end":14,"cssClass":"pl-k"},{"start":15,"end":25,"cssClass":"pl-c1"}],[],[],[{"start":38,"end":50,"cssClass":"pl-en"},{"start":53,"end":58,"cssClass":"pl-k"}],[{"start":4,"end":30,"cssClass":"pl-en"}],[{"start":28,"end":34,"cssClass":"pl-k"},{"start":40,"end":54,"cssClass":"pl-en"}],[],[{"start":28,"end":34,"cssClass":"pl-k"}],[{"start":4,"end":28,"cssClass":"pl-en"}],[{"start":28,"end":34,"cssClass":"pl-k"}],[{"start":4,"end":26,"cssClass":"pl-en"}],[],[{"start":33,"end":39,"cssClass":"pl-c1"},{"start":40,"end":49,"cssClass":"pl-en"},{"start":52,"end":57,"cssClass":"pl-k"}],[{"start":4,"end":30,"cssClass":"pl-en"}],[{"start":28,"end":34,"cssClass":"pl-k"},{"start":40,"end":51,"cssClass":"pl-en"},{"start":57,"end":63,"cssClass":"pl-c1"}],[],[{"start":28,"end":34,"cssClass":"pl-k"}],[{"start":4,"end":25,"cssClass":"pl-en"},{"start":31,"end":37,"cssClass":"pl-c1"}],[{"start":28,"end":34,"cssClass":"pl-k"}],[{"start":4,"end":23,"cssClass":"pl-en"},{"start":29,"end":35,"cssClass":"pl-c1"}],[],[{"start":22,"end":27,"cssClass":"pl-k"},{"start":28,"end":32,"cssClass":"pl-k"},{"start":34,"end":44,"cssClass":"pl-en"},{"start":47,"end":52,"cssClass":"pl-k"}],[{"start":4,"end":30,"cssClass":"pl-en"}],[{"start":28,"end":34,"cssClass":"pl-k"},{"start":40,"end":52,"cssClass":"pl-en"},{"start":53,"end":58,"cssClass":"pl-k"},{"start":59,"end":63,"cssClass":"pl-k"}],[],[{"start":28,"end":34,"cssClass":"pl-k"}],[{"start":4,"end":24,"cssClass":"pl-en"},{"start":25,"end":30,"cssClass":"pl-k"},{"start":31,"end":35,"cssClass":"pl-k"}],[],[{"start":4,"end":30,"cssClass":"pl-en"}],[{"start":28,"end":34,"cssClass":"pl-k"},{"start":40,"end":59,"cssClass":"pl-en"},{"start":60,"end":65,"cssClass":"pl-k"},{"start":66,"end":70,"cssClass":"pl-k"}],[],[{"start":28,"end":34,"cssClass":"pl-k"}],[{"start":4,"end":31,"cssClass":"pl-en"},{"start":32,"end":37,"cssClass":"pl-k"},{"start":38,"end":42,"cssClass":"pl-k"}],[],[{"start":28,"end":34,"cssClass":"pl-k"},{"start":35,"end":39,"cssClass":"pl-k"},{"start":40,"end":49,"cssClass":"pl-en"}],[{"start":28,"end":34,"cssClass":"pl-k"},{"start":35,"end":39,"cssClass":"pl-k"},{"start":40,"end":49,"cssClass":"pl-en"},{"start":50,"end":55,"cssClass":"pl-k"},{"start":56,"end":60,"cssClass":"pl-k"}],[{"start":28,"end":34,"cssClass":"pl-k"},{"start":35,"end":39,"cssClass":"pl-k"},{"start":40,"end":56,"cssClass":"pl-en"},{"start":57,"end":62,"cssClass":"pl-k"},{"start":63,"end":67,"cssClass":"pl-k"}],[],[{"start":4,"end":11,"cssClass":"pl-k"}],[{"start":4,"end":11,"cssClass":"pl-k"},{"start":38,"end":43,"cssClass":"pl-k"},{"start":44,"end":48,"cssClass":"pl-k"}],[],[{"start":4,"end":11,"cssClass":"pl-k"}],[{"start":4,"end":11,"cssClass":"pl-k"}],[],[{"start":28,"end":34,"cssClass":"pl-k"},{"start":35,"end":40,"cssClass":"pl-k"},{"start":46,"end":52,"cssClass":"pl-c1"}],[{"start":8,"end":23,"cssClass":"pl-en"}],[{"start":28,"end":34,"cssClass":"pl-k"},{"start":40,"end":46,"cssClass":"pl-c1"},{"start":47,"end":52,"cssClass":"pl-en"}],[{"start":10,"end":16,"cssClass":"pl-k"}],[],[{"start":28,"end":34,"cssClass":"pl-k"},{"start":35,"end":40,"cssClass":"pl-k"},{"start":41,"end":45,"cssClass":"pl-k"},{"start":47,"end":52,"cssClass":"pl-en"}],[{"start":28,"end":34,"cssClass":"pl-k"},{"start":51,"end":58,"cssClass":"pl-en"}],[{"start":22,"end":28,"cssClass":"pl-k"},{"start":44,"end":50,"cssClass":"pl-en"}],[],[],[],[{"start":4,"end":36,"cssClass":"pl-en"}],[],[{"start":2,"end":10,"cssClass":"pl-k"}],[{"start":4,"end":12,"cssClass":"pl-k"},{"start":37,"end":41,"cssClass":"pl-en"},{"start":42,"end":47,"cssClass":"pl-k"}],[],[],[],[],[{"start":28,"end":34,"cssClass":"pl-k"}],[{"start":4,"end":20,"cssClass":"pl-en"},{"start":43,"end":49,"cssClass":"pl-c1"},{"start":58,"end":59,"cssClass":"pl-c1"}],[{"start":28,"end":34,"cssClass":"pl-k"}],[{"start":4,"end":21,"cssClass":"pl-en"},{"start":22,"end":27,"cssClass":"pl-k"},{"start":28,"end":32,"cssClass":"pl-k"},{"start":45,"end":51,"cssClass":"pl-c1"},{"start":60,"end":61,"cssClass":"pl-c1"}],[{"start":28,"end":34,"cssClass":"pl-k"}],[{"start":4,"end":28,"cssClass":"pl-en"},{"start":29,"end":34,"cssClass":"pl-k"},{"start":35,"end":39,"cssClass":"pl-k"},{"start":52,"end":58,"cssClass":"pl-c1"},{"start":67,"end":68,"cssClass":"pl-c1"}],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":17,"cssClass":"pl-k"}],[],[],[{"start":0,"end":9,"cssClass":"pl-k"},{"start":10,"end":28,"cssClass":"pl-en"}],[],[{"start":0,"end":6,"cssClass":"pl-k"}],[],[],[{"start":0,"end":4,"cssClass":"pl-k"}],[],[],[],[{"start":24,"end":29,"cssClass":"pl-k"}],[{"start":6,"end":21,"cssClass":"pl-c1"},{"start":22,"end":45,"cssClass":"pl-c1"}],[],[],[{"start":0,"end":15,"cssClass":"pl-en"}],[],[],[],[],[],[],[{"start":0,"end":6,"cssClass":"pl-k"},{"start":7,"end":12,"cssClass":"pl-k"}],[{"start":0,"end":8,"cssClass":"pl-k"}],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":22,"cssClass":"pl-k"}],[],[],[],[{"start":24,"end":30,"cssClass":"pl-k"}],[{"start":0,"end":22,"cssClass":"pl-en"},{"start":51,"end":57,"cssClass":"pl-c1"}],[],[{"start":4,"end":10,"cssClass":"pl-k"}],[{"start":8,"end":13,"cssClass":"pl-c1"},{"start":17,"end":22,"cssClass":"pl-c1"}],[{"start":12,"end":27,"cssClass":"pl-c1"}],[{"start":12,"end":27,"cssClass":"pl-c1"},{"start":48,"end":53,"cssClass":"pl-c1"},{"start":55,"end":61,"cssClass":"pl-smi"}],[{"start":16,"end":31,"cssClass":"pl-c1"},{"start":32,"end":37,"cssClass":"pl-c1"}],[{"start":16,"end":32,"cssClass":"pl-c1"},{"start":40,"end":45,"cssClass":"pl-c1"},{"start":48,"end":49,"cssClass":"pl-c1"}],[],[],[{"start":24,"end":30,"cssClass":"pl-k"}],[{"start":0,"end":23,"cssClass":"pl-en"},{"start":24,"end":29,"cssClass":"pl-k"},{"start":30,"end":34,"cssClass":"pl-k"},{"start":47,"end":53,"cssClass":"pl-c1"}],[],[{"start":4,"end":10,"cssClass":"pl-k"}],[{"start":8,"end":13,"cssClass":"pl-c1"},{"start":17,"end":22,"cssClass":"pl-c1"},{"start":27,"end":42,"cssClass":"pl-c1"}],[{"start":8,"end":36,"cssClass":"pl-en"}],[{"start":12,"end":27,"cssClass":"pl-en"}],[],[{"start":44,"end":45,"cssClass":"pl-c1"}],[],[],[{"start":24,"end":30,"cssClass":"pl-k"}],[{"start":0,"end":30,"cssClass":"pl-en"},{"start":31,"end":36,"cssClass":"pl-k"},{"start":37,"end":41,"cssClass":"pl-k"},{"start":54,"end":60,"cssClass":"pl-c1"}],[],[{"start":4,"end":10,"cssClass":"pl-k"}],[{"start":8,"end":13,"cssClass":"pl-c1"},{"start":17,"end":22,"cssClass":"pl-c1"},{"start":27,"end":42,"cssClass":"pl-c1"}],[{"start":12,"end":47,"cssClass":"pl-en"}],[{"start":16,"end":31,"cssClass":"pl-en"}],[],[{"start":59,"end":60,"cssClass":"pl-c1"}],[],[],[{"start":24,"end":30,"cssClass":"pl-k"},{"start":47,"end":65,"cssClass":"pl-en"},{"start":68,"end":73,"cssClass":"pl-k"}],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":20,"cssClass":"pl-c1"}],[],[],[{"start":24,"end":30,"cssClass":"pl-k"},{"start":36,"end":42,"cssClass":"pl-c1"},{"start":43,"end":58,"cssClass":"pl-en"},{"start":61,"end":66,"cssClass":"pl-k"}],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":12,"end":28,"cssClass":"pl-c1"}],[],[],[{"start":24,"end":30,"cssClass":"pl-k"}],[{"start":0,"end":27,"cssClass":"pl-en"},{"start":33,"end":39,"cssClass":"pl-c1"}],[],[{"start":4,"end":10,"cssClass":"pl-k"}],[{"start":8,"end":32,"cssClass":"pl-en"}],[],[],[{"start":24,"end":30,"cssClass":"pl-k"}],[{"start":0,"end":25,"cssClass":"pl-en"},{"start":31,"end":37,"cssClass":"pl-c1"}],[],[{"start":4,"end":10,"cssClass":"pl-k"}],[{"start":8,"end":13,"cssClass":"pl-c1"},{"start":17,"end":22,"cssClass":"pl-c1"}],[{"start":12,"end":21,"cssClass":"pl-c1"}],[{"start":13,"end":22,"cssClass":"pl-c1"},{"start":23,"end":38,"cssClass":"pl-c1"},{"start":59,"end":64,"cssClass":"pl-c1"}],[],[],[{"start":0,"end":26,"cssClass":"pl-en"}],[{"start":24,"end":30,"cssClass":"pl-k"},{"start":36,"end":53,"cssClass":"pl-en"},{"start":59,"end":65,"cssClass":"pl-c1"}],[],[{"start":4,"end":10,"cssClass":"pl-k"}],[{"start":8,"end":33,"cssClass":"pl-en"}],[{"start":40,"end":73,"cssClass":"pl-s"},{"start":40,"end":41,"cssClass":"pl-pds"},{"start":72,"end":73,"cssClass":"pl-pds"}],[],[],[],[],[],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":22,"cssClass":"pl-k"}],[],[],[{"start":24,"end":30,"cssClass":"pl-k"}],[{"start":0,"end":28,"cssClass":"pl-en"}],[],[{"start":4,"end":10,"cssClass":"pl-k"}],[{"start":41,"end":56,"cssClass":"pl-c1"}],[{"start":41,"end":57,"cssClass":"pl-c1"}],[],[],[{"start":0,"end":26,"cssClass":"pl-en"}],[{"start":24,"end":30,"cssClass":"pl-k"},{"start":36,"end":56,"cssClass":"pl-en"}],[],[{"start":4,"end":10,"cssClass":"pl-k"}],[{"start":8,"end":33,"cssClass":"pl-en"}],[{"start":40,"end":76,"cssClass":"pl-s"},{"start":40,"end":41,"cssClass":"pl-pds"},{"start":75,"end":76,"cssClass":"pl-pds"}],[],[],[],[{"start":25,"end":30,"cssClass":"pl-k"},{"start":56,"end":61,"cssClass":"pl-k"}],[],[{"start":4,"end":10,"cssClass":"pl-k"}],[{"start":8,"end":32,"cssClass":"pl-en"}],[{"start":39,"end":44,"cssClass":"pl-k"},{"start":45,"end":49,"cssClass":"pl-k"}],[{"start":16,"end":31,"cssClass":"pl-en"}],[],[],[],[{"start":24,"end":30,"cssClass":"pl-k"}],[{"start":0,"end":26,"cssClass":"pl-en"},{"start":27,"end":32,"cssClass":"pl-k"},{"start":33,"end":37,"cssClass":"pl-k"}],[],[{"start":4,"end":10,"cssClass":"pl-k"}],[],[{"start":12,"end":27,"cssClass":"pl-c1"},{"start":49,"end":66,"cssClass":"pl-c1"}],[],[],[{"start":0,"end":26,"cssClass":"pl-en"}],[{"start":24,"end":30,"cssClass":"pl-k"},{"start":36,"end":54,"cssClass":"pl-en"},{"start":55,"end":60,"cssClass":"pl-k"},{"start":61,"end":65,"cssClass":"pl-k"}],[],[{"start":4,"end":10,"cssClass":"pl-k"}],[{"start":8,"end":33,"cssClass":"pl-en"}],[{"start":40,"end":74,"cssClass":"pl-s"},{"start":40,"end":41,"cssClass":"pl-pds"},{"start":73,"end":74,"cssClass":"pl-pds"}],[],[],[],[],[{"start":34,"end":39,"cssClass":"pl-k"},{"start":40,"end":44,"cssClass":"pl-k"}],[],[{"start":4,"end":10,"cssClass":"pl-k"}],[{"start":41,"end":56,"cssClass":"pl-c1"}],[{"start":41,"end":65,"cssClass":"pl-c1"}],[],[],[{"start":0,"end":26,"cssClass":"pl-en"}],[{"start":24,"end":30,"cssClass":"pl-k"},{"start":36,"end":61,"cssClass":"pl-en"},{"start":62,"end":67,"cssClass":"pl-k"},{"start":68,"end":72,"cssClass":"pl-k"}],[],[{"start":4,"end":10,"cssClass":"pl-k"}],[{"start":8,"end":33,"cssClass":"pl-en"}],[{"start":12,"end":39,"cssClass":"pl-en"}],[{"start":18,"end":59,"cssClass":"pl-s"},{"start":18,"end":19,"cssClass":"pl-pds"},{"start":58,"end":59,"cssClass":"pl-pds"}],[],[],[],[],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":27,"cssClass":"pl-c1"}],[],[],[{"start":24,"end":30,"cssClass":"pl-k"},{"start":31,"end":35,"cssClass":"pl-k"},{"start":36,"end":51,"cssClass":"pl-en"},{"start":52,"end":57,"cssClass":"pl-k"},{"start":58,"end":62,"cssClass":"pl-k"}],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":28,"cssClass":"pl-c1"}],[],[],[{"start":24,"end":30,"cssClass":"pl-k"},{"start":31,"end":35,"cssClass":"pl-k"},{"start":36,"end":58,"cssClass":"pl-en"},{"start":59,"end":64,"cssClass":"pl-k"},{"start":65,"end":69,"cssClass":"pl-k"}],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":35,"cssClass":"pl-c1"}],[],[],[{"start":24,"end":30,"cssClass":"pl-k"},{"start":31,"end":36,"cssClass":"pl-k"},{"start":37,"end":41,"cssClass":"pl-k"},{"start":43,"end":54,"cssClass":"pl-en"}],[],[{"start":4,"end":10,"cssClass":"pl-k"}],[],[],[{"start":24,"end":30,"cssClass":"pl-k"},{"start":53,"end":66,"cssClass":"pl-en"}],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":26,"cssClass":"pl-c1"},{"start":27,"end":42,"cssClass":"pl-c1"},{"start":64,"end":69,"cssClass":"pl-c1"}],[],[],[{"start":18,"end":24,"cssClass":"pl-k"},{"start":46,"end":58,"cssClass":"pl-en"}],[],[{"start":4,"end":10,"cssClass":"pl-k"}],[{"start":8,"end":22,"cssClass":"pl-c1"},{"start":23,"end":38,"cssClass":"pl-c1"},{"start":46,"end":57,"cssClass":"pl-c1"}],[{"start":23,"end":37,"cssClass":"pl-c1"},{"start":38,"end":43,"cssClass":"pl-c1"}],[],[],[{"start":0,"end":16,"cssClass":"pl-en"}],[],[],[],[],[{"start":24,"end":29,"cssClass":"pl-k"},{"start":39,"end":44,"cssClass":"pl-k"}],[{"start":6,"end":12,"cssClass":"pl-k"},{"start":15,"end":27,"cssClass":"pl-c1"},{"start":35,"end":47,"cssClass":"pl-c1"}],[],[],[{"start":0,"end":6,"cssClass":"pl-k"},{"start":7,"end":11,"cssClass":"pl-k"},{"start":12,"end":20,"cssClass":"pl-k"},{"start":24,"end":29,"cssClass":"pl-k"},{"start":39,"end":44,"cssClass":"pl-k"}],[{"start":6,"end":12,"cssClass":"pl-k"},{"start":15,"end":27,"cssClass":"pl-c1"},{"start":35,"end":47,"cssClass":"pl-c1"}],[],[],[{"start":0,"end":6,"cssClass":"pl-k"},{"start":7,"end":11,"cssClass":"pl-k"},{"start":12,"end":20,"cssClass":"pl-k"},{"start":23,"end":28,"cssClass":"pl-k"},{"start":38,"end":43,"cssClass":"pl-k"}],[{"start":6,"end":12,"cssClass":"pl-k"},{"start":15,"end":27,"cssClass":"pl-c1"},{"start":34,"end":46,"cssClass":"pl-c1"}],[],[],[{"start":0,"end":6,"cssClass":"pl-k"},{"start":7,"end":11,"cssClass":"pl-k"},{"start":12,"end":20,"cssClass":"pl-k"},{"start":24,"end":29,"cssClass":"pl-k"},{"start":39,"end":44,"cssClass":"pl-k"}],[{"start":6,"end":12,"cssClass":"pl-k"},{"start":15,"end":27,"cssClass":"pl-c1"},{"start":35,"end":47,"cssClass":"pl-c1"}],[],[],[{"start":0,"end":6,"cssClass":"pl-k"},{"start":7,"end":11,"cssClass":"pl-k"},{"start":12,"end":20,"cssClass":"pl-k"},{"start":23,"end":28,"cssClass":"pl-k"},{"start":38,"end":43,"cssClass":"pl-k"}],[{"start":6,"end":12,"cssClass":"pl-k"},{"start":15,"end":27,"cssClass":"pl-c1"},{"start":34,"end":46,"cssClass":"pl-c1"}],[],[],[{"start":0,"end":6,"cssClass":"pl-k"},{"start":7,"end":11,"cssClass":"pl-k"},{"start":12,"end":20,"cssClass":"pl-k"},{"start":24,"end":29,"cssClass":"pl-k"},{"start":39,"end":44,"cssClass":"pl-k"}],[{"start":6,"end":12,"cssClass":"pl-k"},{"start":15,"end":27,"cssClass":"pl-c1"},{"start":35,"end":47,"cssClass":"pl-c1"}],[],[],[],[{"start":0,"end":9,"cssClass":"pl-k"},{"start":10,"end":18,"cssClass":"pl-k"},{"start":25,"end":33,"cssClass":"pl-k"}],[],[{"start":0,"end":8,"cssClass":"pl-k"},{"start":54,"end":59,"cssClass":"pl-k"}],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":27,"end":37,"cssClass":"pl-c1"}],[],[],[{"start":0,"end":9,"cssClass":"pl-k"},{"start":10,"end":18,"cssClass":"pl-k"},{"start":25,"end":33,"cssClass":"pl-k"}],[],[{"start":0,"end":8,"cssClass":"pl-k"}],[],[],[],[],[],[{"start":8,"end":34,"cssClass":"pl-c1"},{"start":42,"end":47,"cssClass":"pl-c1"}],[],[{"start":4,"end":6,"cssClass":"pl-k"}],[],[{"start":4,"end":8,"cssClass":"pl-k"}],[{"start":15,"end":23,"cssClass":"pl-c1"}],[],[{"start":4,"end":10,"cssClass":"pl-k"}],[],[],[],[],[{"start":0,"end":24,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[],[{"start":0,"end":15,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":42,"cssClass":"pl-en"},{"start":43,"end":53,"cssClass":"pl-v"}],[],[{"start":0,"end":8,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":42,"cssClass":"pl-en"},{"start":43,"end":53,"cssClass":"pl-v"}],[],[],[{"start":1,"end":3,"cssClass":"pl-k"}],[{"start":0,"end":75,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":0,"end":19,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":46,"cssClass":"pl-en"},{"start":47,"end":57,"cssClass":"pl-v"}],[{"start":8,"end":42,"cssClass":"pl-c1"}],[{"start":1,"end":5,"cssClass":"pl-k"}],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":46,"cssClass":"pl-en"},{"start":47,"end":57,"cssClass":"pl-v"}],[{"start":8,"end":42,"cssClass":"pl-c1"}],[{"start":1,"end":6,"cssClass":"pl-k"}],[],[{"start":0,"end":15,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":45,"cssClass":"pl-en"},{"start":46,"end":50,"cssClass":"pl-v"}],[],[],[{"start":0,"end":8,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":43,"cssClass":"pl-en"},{"start":44,"end":48,"cssClass":"pl-v"}],[{"start":4,"end":19,"cssClass":"pl-c1"}],[],[{"start":0,"end":15,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":54,"cssClass":"pl-en"}],[],[{"start":0,"end":8,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":52,"cssClass":"pl-en"}],[{"start":4,"end":8,"cssClass":"pl-k"},{"start":9,"end":14,"cssClass":"pl-k"},{"start":15,"end":44,"cssClass":"pl-en"}],[],[{"start":0,"end":8,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":46,"cssClass":"pl-en"}],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":16,"cssClass":"pl-k"},{"start":17,"end":21,"cssClass":"pl-k"},{"start":24,"end":34,"cssClass":"pl-c1"}],[],[{"start":8,"end":14,"cssClass":"pl-k"},{"start":15,"end":20,"cssClass":"pl-k"},{"start":21,"end":25,"cssClass":"pl-k"}],[{"start":14,"end":29,"cssClass":"pl-c1"},{"start":30,"end":52,"cssClass":"pl-c1"}],[{"start":8,"end":14,"cssClass":"pl-k"}],[],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":15,"cssClass":"pl-k"},{"start":17,"end":30,"cssClass":"pl-c1"}],[],[{"start":8,"end":14,"cssClass":"pl-k"},{"start":15,"end":19,"cssClass":"pl-k"}],[{"start":12,"end":27,"cssClass":"pl-c1"},{"start":28,"end":56,"cssClass":"pl-c1"}],[{"start":8,"end":14,"cssClass":"pl-k"}],[],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":16,"cssClass":"pl-k"},{"start":17,"end":21,"cssClass":"pl-k"},{"start":24,"end":35,"cssClass":"pl-c1"}],[],[{"start":8,"end":14,"cssClass":"pl-k"},{"start":15,"end":20,"cssClass":"pl-k"},{"start":21,"end":25,"cssClass":"pl-k"}],[{"start":8,"end":14,"cssClass":"pl-k"}],[],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":15,"cssClass":"pl-k"},{"start":17,"end":29,"cssClass":"pl-c1"}],[],[{"start":8,"end":14,"cssClass":"pl-k"},{"start":15,"end":19,"cssClass":"pl-k"},{"start":36,"end":41,"cssClass":"pl-c1"}],[{"start":8,"end":14,"cssClass":"pl-k"}],[],[],[{"start":0,"end":21,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":64,"cssClass":"pl-en"}],[{"start":4,"end":13,"cssClass":"pl-k"},{"start":14,"end":19,"cssClass":"pl-k"},{"start":20,"end":24,"cssClass":"pl-k"}],[{"start":10,"end":25,"cssClass":"pl-c1"},{"start":26,"end":48,"cssClass":"pl-c1"}],[],[{"start":4,"end":13,"cssClass":"pl-k"},{"start":14,"end":19,"cssClass":"pl-k"},{"start":20,"end":24,"cssClass":"pl-k"},{"start":27,"end":32,"cssClass":"pl-k"},{"start":35,"end":45,"cssClass":"pl-c1"}],[],[{"start":8,"end":14,"cssClass":"pl-k"}],[],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":15,"cssClass":"pl-k"},{"start":17,"end":30,"cssClass":"pl-c1"}],[],[{"start":8,"end":14,"cssClass":"pl-k"},{"start":15,"end":19,"cssClass":"pl-k"}],[{"start":12,"end":27,"cssClass":"pl-c1"},{"start":28,"end":56,"cssClass":"pl-c1"}],[{"start":8,"end":14,"cssClass":"pl-k"}],[],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":16,"cssClass":"pl-k"},{"start":17,"end":21,"cssClass":"pl-k"},{"start":24,"end":35,"cssClass":"pl-c1"}],[],[{"start":8,"end":14,"cssClass":"pl-k"},{"start":15,"end":20,"cssClass":"pl-k"},{"start":21,"end":25,"cssClass":"pl-k"}],[{"start":8,"end":14,"cssClass":"pl-k"}],[],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":15,"cssClass":"pl-k"},{"start":17,"end":29,"cssClass":"pl-c1"}],[],[{"start":8,"end":14,"cssClass":"pl-k"},{"start":15,"end":19,"cssClass":"pl-k"},{"start":36,"end":41,"cssClass":"pl-c1"}],[{"start":8,"end":14,"cssClass":"pl-k"}],[],[],[{"start":0,"end":35,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":61,"cssClass":"pl-en"}],[{"start":4,"end":19,"cssClass":"pl-c1"},{"start":20,"end":45,"cssClass":"pl-c1"}],[],[{"start":4,"end":13,"cssClass":"pl-k"},{"start":14,"end":19,"cssClass":"pl-k"},{"start":20,"end":24,"cssClass":"pl-k"},{"start":27,"end":32,"cssClass":"pl-k"}],[{"start":10,"end":25,"cssClass":"pl-c1"},{"start":26,"end":55,"cssClass":"pl-c1"}],[],[{"start":4,"end":13,"cssClass":"pl-k"},{"start":14,"end":19,"cssClass":"pl-k"},{"start":20,"end":24,"cssClass":"pl-k"},{"start":27,"end":32,"cssClass":"pl-k"},{"start":35,"end":46,"cssClass":"pl-c1"}],[],[{"start":8,"end":14,"cssClass":"pl-k"}],[],[],[{"start":4,"end":13,"cssClass":"pl-k"},{"start":14,"end":19,"cssClass":"pl-k"},{"start":20,"end":24,"cssClass":"pl-k"},{"start":27,"end":32,"cssClass":"pl-k"},{"start":35,"end":45,"cssClass":"pl-c1"}],[],[{"start":8,"end":14,"cssClass":"pl-k"}],[],[],[{"start":0,"end":28,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":51,"cssClass":"pl-en"}],[],[{"start":0,"end":35,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":48,"cssClass":"pl-en"}],[{"start":4,"end":13,"cssClass":"pl-k"}],[],[{"start":0,"end":28,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":42,"cssClass":"pl-en"}],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":14,"cssClass":"pl-k"},{"start":15,"end":25,"cssClass":"pl-smi"}],[],[{"start":0,"end":35,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":45,"cssClass":"pl-en"}],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":14,"cssClass":"pl-k"},{"start":15,"end":25,"cssClass":"pl-smi"},{"start":30,"end":36,"cssClass":"pl-k"},{"start":37,"end":38,"cssClass":"pl-c1"}],[],[{"start":0,"end":28,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":41,"cssClass":"pl-en"},{"start":42,"end":46,"cssClass":"pl-v"}],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":14,"cssClass":"pl-k"},{"start":15,"end":31,"cssClass":"pl-smi"}],[],[{"start":8,"end":10,"cssClass":"pl-k"},{"start":12,"end":27,"cssClass":"pl-c1"},{"start":35,"end":47,"cssClass":"pl-c1"}],[{"start":12,"end":18,"cssClass":"pl-k"},{"start":19,"end":20,"cssClass":"pl-c1"}],[],[{"start":8,"end":35,"cssClass":"pl-en"}],[],[],[],[],[{"start":8,"end":23,"cssClass":"pl-c1"},{"start":31,"end":43,"cssClass":"pl-c1"},{"start":48,"end":52,"cssClass":"pl-c1"}],[],[{"start":8,"end":14,"cssClass":"pl-k"},{"start":15,"end":16,"cssClass":"pl-c1"}],[],[],[{"start":0,"end":35,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":45,"cssClass":"pl-en"},{"start":46,"end":50,"cssClass":"pl-v"}],[],[{"start":0,"end":28,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":39,"cssClass":"pl-en"},{"start":40,"end":45,"cssClass":"pl-v"}],[{"start":4,"end":33,"cssClass":"pl-en"}],[],[{"start":0,"end":35,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":43,"cssClass":"pl-en"},{"start":44,"end":49,"cssClass":"pl-v"}],[],[],[],[],[{"start":0,"end":26,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[],[{"start":1,"end":6,"cssClass":"pl-k"}],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":43,"cssClass":"pl-en"}],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":52,"cssClass":"pl-en"}],[],[{"start":1,"end":5,"cssClass":"pl-k"}],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":43,"cssClass":"pl-en"}],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":52,"cssClass":"pl-en"}],[],[{"start":1,"end":6,"cssClass":"pl-k"}],[],[],[],[{"start":1,"end":7,"cssClass":"pl-k"}],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":43,"cssClass":"pl-en"},{"start":44,"end":48,"cssClass":"pl-v"}],[{"start":6,"end":14,"cssClass":"pl-k"}],[{"start":8,"end":12,"cssClass":"pl-c1"},{"start":17,"end":23,"cssClass":"pl-c1"},{"start":24,"end":25,"cssClass":"pl-c1"}],[{"start":1,"end":6,"cssClass":"pl-k"}],[],[],[],[{"start":1,"end":6,"cssClass":"pl-k"}],[],[{"start":1,"end":6,"cssClass":"pl-k"}],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":51,"cssClass":"pl-en"}],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":49,"cssClass":"pl-en"}],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":50,"cssClass":"pl-en"}],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":49,"cssClass":"pl-en"}],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":47,"cssClass":"pl-en"}],[],[{"start":1,"end":5,"cssClass":"pl-k"}],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":51,"cssClass":"pl-en"}],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":49,"cssClass":"pl-en"}],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":50,"cssClass":"pl-en"}],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":49,"cssClass":"pl-en"}],[],[{"start":4,"end":10,"cssClass":"pl-k"},{"start":11,"end":47,"cssClass":"pl-en"}],[],[{"start":1,"end":6,"cssClass":"pl-k"}],[],[],[],[{"start":0,"end":20,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":19,"cssClass":"pl-en"}],[{"start":4,"end":19,"cssClass":"pl-c1"},{"start":20,"end":37,"cssClass":"pl-c1"}],[],[],[],[],[],[],[],[],[],[],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":17,"cssClass":"pl-en"}],[{"start":4,"end":19,"cssClass":"pl-c1"},{"start":20,"end":37,"cssClass":"pl-c1"}],[],[],[],[],[],[],[],[],[],[],[{"start":1,"end":5,"cssClass":"pl-k"}],[],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":19,"cssClass":"pl-en"}],[{"start":4,"end":19,"cssClass":"pl-c1"},{"start":20,"end":37,"cssClass":"pl-c1"}],[],[],[],[],[],[],[],[],[],[],[{"start":1,"end":6,"cssClass":"pl-k"}],[],[],[],[{"start":0,"end":9,"cssClass":"pl-k"},{"start":10,"end":22,"cssClass":"pl-en"}],[],[{"start":0,"end":8,"cssClass":"pl-c"},{"start":0,"end":2,"cssClass":"pl-c"}],[],[{"start":0,"end":9,"cssClass":"pl-k"},{"start":10,"end":18,"cssClass":"pl-k"}],[{"start":0,"end":6,"cssClass":"pl-k"},{"start":7,"end":18,"cssClass":"pl-en"}],[{"start":28,"end":34,"cssClass":"pl-k"},{"start":35,"end":39,"cssClass":"pl-k"},{"start":40,"end":44,"cssClass":"pl-en"},{"start":45,"end":50,"cssClass":"pl-k"},{"start":57,"end":62,"cssClass":"pl-k"}],[{"start":10,"end":16,"cssClass":"pl-k"}],[],[],[{"start":0,"end":9,"cssClass":"pl-k"}],[{"start":0,"end":6,"cssClass":"pl-k"},{"start":7,"end":18,"cssClass":"pl-en"},{"start":19,"end":24,"cssClass":"pl-k"},{"start":25,"end":29,"cssClass":"pl-k"}],[{"start":28,"end":34,"cssClass":"pl-k"},{"start":35,"end":39,"cssClass":"pl-k"},{"start":40,"end":44,"cssClass":"pl-en"},{"start":45,"end":50,"cssClass":"pl-k"},{"start":51,"end":55,"cssClass":"pl-k"},{"start":60,"end":65,"cssClass":"pl-k"},{"start":66,"end":70,"cssClass":"pl-k"}],[{"start":10,"end":16,"cssClass":"pl-k"},{"start":17,"end":26,"cssClass":"pl-c1"}],[],[{"start":2,"end":10,"cssClass":"pl-k"}],[{"start":28,"end":34,"cssClass":"pl-k"},{"start":35,"end":39,"cssClass":"pl-k"}],[{"start":4,"end":13,"cssClass":"pl-en"},{"start":14,"end":19,"cssClass":"pl-k"},{"start":20,"end":24,"cssClass":"pl-k"},{"start":29,"end":34,"cssClass":"pl-k"},{"start":35,"end":39,"cssClass":"pl-k"},{"start":44,"end":50,"cssClass":"pl-c1"},{"start":59,"end":60,"cssClass":"pl-c1"}],[],[{"start":8,"end":14,"cssClass":"pl-k"}],[{"start":14,"end":19,"cssClass":"pl-c1"},{"start":26,"end":31,"cssClass":"pl-c1"},{"start":37,"end":42,"cssClass":"pl-c1"},{"start":48,"end":53,"cssClass":"pl-c1"}],[{"start":14,"end":19,"cssClass":"pl-c1"},{"start":24,"end":28,"cssClass":"pl-s"},{"start":24,"end":25,"cssClass":"pl-pds"},{"start":25,"end":27,"cssClass":"pl-cce"},{"start":27,"end":28,"cssClass":"pl-pds"},{"start":31,"end":36,"cssClass":"pl-c1"}],[{"start":12,"end":21,"cssClass":"pl-c1"},{"start":28,"end":33,"cssClass":"pl-c1"},{"start":36,"end":37,"cssClass":"pl-c1"}],[],[],[],[{"start":0,"end":9,"cssClass":"pl-k"}],[{"start":0,"end":6,"cssClass":"pl-k"},{"start":7,"end":18,"cssClass":"pl-en"},{"start":19,"end":24,"cssClass":"pl-k"},{"start":25,"end":32,"cssClass":"pl-c1"}],[{"start":28,"end":34,"cssClass":"pl-k"},{"start":35,"end":39,"cssClass":"pl-k"},{"start":40,"end":44,"cssClass":"pl-en"},{"start":45,"end":50,"cssClass":"pl-k"},{"start":51,"end":58,"cssClass":"pl-c1"},{"start":63,"end":68,"cssClass":"pl-k"},{"start":69,"end":76,"cssClass":"pl-c1"}],[{"start":10,"end":16,"cssClass":"pl-k"},{"start":17,"end":26,"cssClass":"pl-c1"}],[],[{"start":2,"end":10,"cssClass":"pl-k"}],[{"start":28,"end":34,"cssClass":"pl-k"},{"start":35,"end":39,"cssClass":"pl-k"}],[{"start":4,"end":13,"cssClass":"pl-en"},{"start":14,"end":19,"cssClass":"pl-k"},{"start":20,"end":27,"cssClass":"pl-c1"},{"start":32,"end":37,"cssClass":"pl-k"},{"start":38,"end":45,"cssClass":"pl-c1"},{"start":50,"end":56,"cssClass":"pl-c1"},{"start":65,"end":66,"cssClass":"pl-c1"}],[],[{"start":8,"end":14,"cssClass":"pl-k"}],[{"start":14,"end":19,"cssClass":"pl-c1"},{"start":26,"end":31,"cssClass":"pl-c1"},{"start":37,"end":42,"cssClass":"pl-c1"},{"start":48,"end":53,"cssClass":"pl-c1"}],[{"start":14,"end":19,"cssClass":"pl-c1"},{"start":25,"end":29,"cssClass":"pl-s"},{"start":25,"end":26,"cssClass":"pl-pds"},{"start":26,"end":28,"cssClass":"pl-cce"},{"start":28,"end":29,"cssClass":"pl-pds"},{"start":32,"end":37,"cssClass":"pl-c1"}],[{"start":12,"end":21,"cssClass":"pl-c1"},{"start":28,"end":33,"cssClass":"pl-c1"},{"start":36,"end":37,"cssClass":"pl-c1"}],[],[],[],[{"start":0,"end":9,"cssClass":"pl-k"},{"start":10,"end":18,"cssClass":"pl-k"},{"start":25,"end":33,"cssClass":"pl-k"},{"start":37,"end":45,"cssClass":"pl-k"}],[{"start":0,"end":6,"cssClass":"pl-k"},{"start":7,"end":10,"cssClass":"pl-en"}],[{"start":4,"end":11,"cssClass":"pl-k"},{"start":12,"end":13,"cssClass":"pl-en"}],[],[{"start":28,"end":36,"cssClass":"pl-k"},{"start":37,"end":40,"cssClass":"pl-en"}],[],[{"start":30,"end":39,"cssClass":"pl-en"},{"start":52,"end":57,"cssClass":"pl-k"},{"start":60,"end":66,"cssClass":"pl-k"},{"start":67,"end":69,"cssClass":"pl-c1"}],[{"start":30,"end":38,"cssClass":"pl-k"},{"start":54,"end":59,"cssClass":"pl-k"}],[{"start":10,"end":16,"cssClass":"pl-k"},{"start":17,"end":19,"cssClass":"pl-c1"}],[],[{"start":33,"end":40,"cssClass":"pl-en"},{"start":50,"end":55,"cssClass":"pl-k"}],[],[{"start":8,"end":14,"cssClass":"pl-k"}],[{"start":12,"end":21,"cssClass":"pl-c1"},{"start":22,"end":37,"cssClass":"pl-c1"},{"start":46,"end":78,"cssClass":"pl-s"},{"start":46,"end":47,"cssClass":"pl-pds"},{"start":77,"end":78,"cssClass":"pl-pds"}],[],[],[],[{"start":4,"end":19,"cssClass":"pl-en"},{"start":29,"end":35,"cssClass":"pl-c1"},{"start":44,"end":45,"cssClass":"pl-c1"},{"start":47,"end":52,"cssClass":"pl-k"}],[],[{"start":8,"end":14,"cssClass":"pl-k"}],[{"start":12,"end":17,"cssClass":"pl-c1"},{"start":21,"end":32,"cssClass":"pl-c1"}],[{"start":12,"end":25,"cssClass":"pl-c1"},{"start":26,"end":28,"cssClass":"pl-c1"},{"start":29,"end":42,"cssClass":"pl-c1"},{"start":45,"end":50,"cssClass":"pl-c1"}],[{"start":12,"end":25,"cssClass":"pl-c1"},{"start":33,"end":35,"cssClass":"pl-c1"},{"start":36,"end":49,"cssClass":"pl-c1"},{"start":52,"end":57,"cssClass":"pl-c1"}],[{"start":16,"end":31,"cssClass":"pl-c1"},{"start":39,"end":44,"cssClass":"pl-c1"},{"start":47,"end":48,"cssClass":"pl-c1"}],[{"start":12,"end":25,"cssClass":"pl-c1"},{"start":28,"end":33,"cssClass":"pl-c1"}],[],[],[{"start":2,"end":10,"cssClass":"pl-k"}],[{"start":4,"end":9,"cssClass":"pl-k"}],[],[],[{"start":0,"end":9,"cssClass":"pl-k"},{"start":10,"end":18,"cssClass":"pl-k"},{"start":25,"end":33,"cssClass":"pl-k"}],[{"start":37,"end":45,"cssClass":"pl-en"}],[],[{"start":4,"end":10,"cssClass":"pl-k"}],[],[],[],[],[{"start":1,"end":7,"cssClass":"pl-k"},{"start":8,"end":37,"cssClass":"pl-en"},{"start":38,"end":42,"cssClass":"pl-v"}],[{"start":4,"end":13,"cssClass":"pl-k"},{"start":14,"end":17,"cssClass":"pl-en"}],[{"start":4,"end":13,"cssClass":"pl-k"},{"start":16,"end":22,"cssClass":"pl-k"},{"start":23,"end":27,"cssClass":"pl-en"}],[],[{"start":8,"end":14,"cssClass":"pl-c1"},{"start":15,"end":23,"cssClass":"pl-en"},{"start":26,"end":31,"cssClass":"pl-k"},{"start":41,"end":46,"cssClass":"pl-k"}],[],[{"start":12,"end":18,"cssClass":"pl-k"},{"start":29,"end":35,"cssClass":"pl-c1"},{"start":41,"end":53,"cssClass":"pl-c1"}],[],[],[],[],[{"start":7,"end":37,"cssClass":"pl-c"},{"start":7,"end":9,"cssClass":"pl-c"}]],"csv":null,"csvError":null,"dependabotInfo":{"showConfigurationBanner":false,"configFilePath":null,"networkDependabotPath":"/aantron/better-enums/network/updates","dismissConfigurationNoticePath":"/settings/dismiss-notice/dependabot_configuration_notice","configurationNoticeDismissed":null,"repoAlertsPath":"/aantron/better-enums/security/dependabot","repoSecurityAndAnalysisPath":"/aantron/better-enums/settings/security_analysis","repoOwnerIsOrg":false,"currentUserCanAdminRepo":false},"displayName":"enum.h","displayUrl":"https://github.com/aantron/better-enums/blob/master/enum.h?raw=true","headerInfo":{"blobSize":"66 KB","deleteInfo":{"deleteTooltip":"You must be signed in to make or propose changes"},"editInfo":{"editTooltip":"You must be signed in to make or propose changes"},"ghDesktopPath":"https://desktop.github.com","gitLfsPath":null,"onBranch":true,"shortPath":"9232e9d","siteNavLoginPath":"/login?return_to=https%3A%2F%2Fgithub.com%2Faantron%2Fbetter-enums%2Fblob%2Fmaster%2Fenum.h","isCSV":false,"isRichtext":false,"toc":null,"lineInfo":{"truncatedLoc":"1326","truncatedSloc":"1139"},"mode":"file"},"image":false,"isCodeownersFile":null,"isPlain":false,"isValidLegacyIssueTemplate":false,"issueTemplateHelpUrl":"https://docs.github.com/articles/about-issue-and-pull-request-templates","issueTemplate":null,"discussionTemplate":null,"language":"C++","languageID":43,"large":false,"loggedIn":false,"newDiscussionPath":"/aantron/better-enums/discussions/new","newIssuePath":"/aantron/better-enums/issues/new","planSupportInfo":{"repoIsFork":null,"repoOwnedByCurrentUser":null,"requestFullPath":"/aantron/better-enums/blob/master/enum.h","showFreeOrgGatedFeatureMessage":null,"showPlanSupportBanner":null,"upgradeDataAttributes":null,"upgradePath":null},"publishBannersInfo":{"dismissActionNoticePath":"/settings/dismiss-notice/publish_action_from_dockerfile","dismissStackNoticePath":"/settings/dismiss-notice/publish_stack_from_file","releasePath":"/aantron/better-enums/releases/new?marketplace=true","showPublishActionBanner":false,"showPublishStackBanner":false},"renderImageOrRaw":false,"richText":null,"renderedFileInfo":null,"shortPath":null,"tabSize":8,"topBannersInfo":{"overridingGlobalFundingFile":false,"globalPreferredFundingPath":null,"repoOwner":"aantron","repoName":"better-enums","showInvalidCitationWarning":false,"citationHelpUrl":"https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/creating-a-repository-on-github/about-citation-files","showDependabotConfigurationBanner":false,"actionsOnboardingTip":null},"truncated":false,"viewable":true,"workflowRedirectUrl":null,"symbols":{"timedOut":true,"notAnalyzed":false,"symbols":[{"name":"_default","kind":"function","identStart":13142,"identEnd":13150,"extentStart":13142,"extentEnd":13152,"fullyQualifiedName":"_default","identUtf16":{"start":{"lineNumber":314,"utf16Col":33},"end":{"lineNumber":314,"utf16Col":41}},"extentUtf16":{"start":{"lineNumber":314,"utf16Col":33},"end":{"lineNumber":314,"utf16Col":43}}},{"name":"optional","kind":"class","identStart":13454,"identEnd":13462,"extentStart":13447,"extentEnd":13975,"fullyQualifiedName":"optional","identUtf16":{"start":{"lineNumber":332,"utf16Col":7},"end":{"lineNumber":332,"utf16Col":15}},"extentUtf16":{"start":{"lineNumber":332,"utf16Col":0},"end":{"lineNumber":348,"utf16Col":1}}},{"name":"optional","kind":"function","identStart":13493,"identEnd":13501,"extentStart":13493,"extentEnd":13503,"fullyQualifiedName":"optional::optional","identUtf16":{"start":{"lineNumber":333,"utf16Col":28},"end":{"lineNumber":333,"utf16Col":36}},"extentUtf16":{"start":{"lineNumber":333,"utf16Col":28},"end":{"lineNumber":333,"utf16Col":38}}},{"name":"_value","kind":"function","identStart":13529,"identEnd":13535,"extentStart":13529,"extentEnd":13550,"fullyQualifiedName":"optional::_value","identUtf16":{"start":{"lineNumber":334,"utf16Col":23},"end":{"lineNumber":334,"utf16Col":29}},"extentUtf16":{"start":{"lineNumber":334,"utf16Col":23},"end":{"lineNumber":334,"utf16Col":44}}},{"name":"optional","kind":"function","identStart":13584,"identEnd":13592,"extentStart":13584,"extentEnd":13597,"fullyQualifiedName":"optional::optional","identUtf16":{"start":{"lineNumber":336,"utf16Col":28},"end":{"lineNumber":336,"utf16Col":36}},"extentUtf16":{"start":{"lineNumber":336,"utf16Col":28},"end":{"lineNumber":336,"utf16Col":41}}},{"name":"_value","kind":"function","identStart":13614,"identEnd":13620,"extentStart":13614,"extentEnd":13623,"fullyQualifiedName":"optional::_value","identUtf16":{"start":{"lineNumber":336,"utf16Col":58},"end":{"lineNumber":336,"utf16Col":64}},"extentUtf16":{"start":{"lineNumber":336,"utf16Col":58},"end":{"lineNumber":336,"utf16Col":67}}},{"name":"bool","kind":"function","identStart":13819,"identEnd":13823,"extentStart":13819,"extentEnd":13831,"fullyQualifiedName":"optional::bool","identUtf16":{"start":{"lineNumber":341,"utf16Col":37},"end":{"lineNumber":341,"utf16Col":41}},"extentUtf16":{"start":{"lineNumber":341,"utf16Col":37},"end":{"lineNumber":341,"utf16Col":49}}},{"name":"value","kind":"function","identStart":13889,"identEnd":13894,"extentStart":13889,"extentEnd":13902,"fullyQualifiedName":"optional::value","identUtf16":{"start":{"lineNumber":343,"utf16Col":37},"end":{"lineNumber":343,"utf16Col":42}},"extentUtf16":{"start":{"lineNumber":343,"utf16Col":37},"end":{"lineNumber":343,"utf16Col":50}}},{"name":"BETTER_ENUMS_IF_EXCEPTIONS","kind":"function","identStart":14758,"identEnd":14784,"extentStart":14758,"extentEnd":14933,"fullyQualifiedName":"BETTER_ENUMS_IF_EXCEPTIONS","identUtf16":{"start":{"lineNumber":372,"utf16Col":0},"end":{"lineNumber":372,"utf16Col":26}},"extentUtf16":{"start":{"lineNumber":372,"utf16Col":0},"end":{"lineNumber":375,"utf16Col":63}}},{"name":"_or_null","kind":"function","identStart":15023,"identEnd":15031,"extentStart":15023,"extentEnd":15051,"fullyQualifiedName":"_or_null","identUtf16":{"start":{"lineNumber":382,"utf16Col":34},"end":{"lineNumber":382,"utf16Col":42}},"extentUtf16":{"start":{"lineNumber":382,"utf16Col":34},"end":{"lineNumber":382,"utf16Col":62}}},{"name":"_or_zero","kind":"function","identStart":15162,"identEnd":15170,"extentStart":15162,"extentEnd":15189,"fullyQualifiedName":"_or_zero","identUtf16":{"start":{"lineNumber":388,"utf16Col":33},"end":{"lineNumber":388,"utf16Col":41}},"extentUtf16":{"start":{"lineNumber":388,"utf16Col":33},"end":{"lineNumber":388,"utf16Col":60}}},{"name":"continue_with","kind":"function","identStart":15579,"identEnd":15592,"extentStart":15579,"extentEnd":15604,"fullyQualifiedName":"continue_with","identUtf16":{"start":{"lineNumber":402,"utf16Col":0},"end":{"lineNumber":402,"utf16Col":13}},"extentUtf16":{"start":{"lineNumber":402,"utf16Col":0},"end":{"lineNumber":402,"utf16Col":25}}},{"name":"_eat_assign","kind":"class","identStart":15805,"identEnd":15816,"extentStart":15798,"extentEnd":16144,"fullyQualifiedName":"_eat_assign","identUtf16":{"start":{"lineNumber":411,"utf16Col":7},"end":{"lineNumber":411,"utf16Col":18}},"extentUtf16":{"start":{"lineNumber":411,"utf16Col":0},"end":{"lineNumber":423,"utf16Col":1}}},{"name":"_eat_assign","kind":"method","identStart":15856,"identEnd":15867,"extentStart":15832,"extentEnd":15883,"fullyQualifiedName":"_eat_assign::BETTER_ENUMS_CONSTEXPR_::_eat_assign","identUtf16":{"start":{"lineNumber":412,"utf16Col":37},"end":{"lineNumber":412,"utf16Col":48}},"extentUtf16":{"start":{"lineNumber":412,"utf16Col":13},"end":{"lineNumber":412,"utf16Col":64}}},{"name":"EnumType","kind":"function","identStart":16070,"identEnd":16078,"extentStart":16070,"extentEnd":16087,"fullyQualifiedName":"_eat_assign::EnumType","identUtf16":{"start":{"lineNumber":419,"utf16Col":37},"end":{"lineNumber":419,"utf16Col":45}},"extentUtf16":{"start":{"lineNumber":419,"utf16Col":37},"end":{"lineNumber":419,"utf16Col":54}}},{"name":"_iterable","kind":"class","identStart":16199,"identEnd":16208,"extentStart":16192,"extentEnd":16807,"fullyQualifiedName":"_iterable","identUtf16":{"start":{"lineNumber":430,"utf16Col":7},"end":{"lineNumber":430,"utf16Col":16}},"extentUtf16":{"start":{"lineNumber":430,"utf16Col":0},"end":{"lineNumber":446,"utf16Col":1}}},{"name":"begin","kind":"function","identStart":16287,"identEnd":16292,"extentStart":16287,"extentEnd":16300,"fullyQualifiedName":"_iterable::begin","identUtf16":{"start":{"lineNumber":433,"utf16Col":37},"end":{"lineNumber":433,"utf16Col":42}},"extentUtf16":{"start":{"lineNumber":433,"utf16Col":37},"end":{"lineNumber":433,"utf16Col":50}}},{"name":"end","kind":"function","identStart":16367,"identEnd":16370,"extentStart":16367,"extentEnd":16378,"fullyQualifiedName":"_iterable::end","identUtf16":{"start":{"lineNumber":434,"utf16Col":37},"end":{"lineNumber":434,"utf16Col":40}},"extentUtf16":{"start":{"lineNumber":434,"utf16Col":37},"end":{"lineNumber":434,"utf16Col":48}}},{"name":"_iterable","kind":"function","identStart":16638,"identEnd":16647,"extentStart":16638,"extentEnd":16684,"fullyQualifiedName":"_iterable::_iterable","identUtf16":{"start":{"lineNumber":440,"utf16Col":28},"end":{"lineNumber":440,"utf16Col":37}},"extentUtf16":{"start":{"lineNumber":440,"utf16Col":28},"end":{"lineNumber":440,"utf16Col":74}}},{"name":"_size","kind":"function","identStart":16710,"identEnd":16715,"extentStart":16710,"extentEnd":16718,"fullyQualifiedName":"_iterable::_size","identUtf16":{"start":{"lineNumber":441,"utf16Col":23},"end":{"lineNumber":441,"utf16Col":28}},"extentUtf16":{"start":{"lineNumber":441,"utf16Col":23},"end":{"lineNumber":441,"utf16Col":31}}},{"name":"_ends_name","kind":"function","identStart":16944,"identEnd":16954,"extentStart":16944,"extentEnd":16985,"fullyQualifiedName":"_ends_name","identUtf16":{"start":{"lineNumber":454,"utf16Col":36},"end":{"lineNumber":454,"utf16Col":46}},"extentUtf16":{"start":{"lineNumber":454,"utf16Col":36},"end":{"lineNumber":454,"utf16Col":77}}},{"name":"_has_initializer","kind":"function","identStart":17161,"identEnd":17177,"extentStart":17161,"extentEnd":17268,"fullyQualifiedName":"_has_initializer","identUtf16":{"start":{"lineNumber":462,"utf16Col":36},"end":{"lineNumber":462,"utf16Col":52}},"extentUtf16":{"start":{"lineNumber":462,"utf16Col":36},"end":{"lineNumber":463,"utf16Col":75}}},{"name":"_select","kind":"function","identStart":17606,"identEnd":17613,"extentStart":17606,"extentEnd":17675,"fullyQualifiedName":"_select","identUtf16":{"start":{"lineNumber":478,"utf16Col":0},"end":{"lineNumber":478,"utf16Col":7}},"extentUtf16":{"start":{"lineNumber":478,"utf16Col":0},"end":{"lineNumber":478,"utf16Col":69}}},{"name":"_to_lower_ascii","kind":"function","identStart":17771,"identEnd":17786,"extentStart":17771,"extentEnd":17794,"fullyQualifiedName":"_to_lower_ascii","identUtf16":{"start":{"lineNumber":483,"utf16Col":36},"end":{"lineNumber":483,"utf16Col":51}},"extentUtf16":{"start":{"lineNumber":483,"utf16Col":36},"end":{"lineNumber":483,"utf16Col":59}}},{"name":"_names_match","kind":"function","identStart":17905,"identEnd":17917,"extentStart":17905,"extentEnd":18093,"fullyQualifiedName":"_names_match","identUtf16":{"start":{"lineNumber":488,"utf16Col":36},"end":{"lineNumber":488,"utf16Col":48}},"extentUtf16":{"start":{"lineNumber":488,"utf16Col":36},"end":{"lineNumber":490,"utf16Col":71}}},{"name":"_names_match_nocase","kind":"function","identStart":18396,"identEnd":18415,"extentStart":18396,"extentEnd":18513,"fullyQualifiedName":"_names_match_nocase","identUtf16":{"start":{"lineNumber":500,"utf16Col":0},"end":{"lineNumber":500,"utf16Col":19}},"extentUtf16":{"start":{"lineNumber":500,"utf16Col":0},"end":{"lineNumber":501,"utf16Col":42}}},{"name":"_trim_names","kind":"function","identStart":18845,"identEnd":18856,"extentStart":18845,"extentEnd":18997,"fullyQualifiedName":"_trim_names","identUtf16":{"start":{"lineNumber":511,"utf16Col":12},"end":{"lineNumber":511,"utf16Col":23}},"extentUtf16":{"start":{"lineNumber":511,"utf16Col":12},"end":{"lineNumber":513,"utf16Col":57}}},{"name":"_initialize_at_program_start","kind":"class","identStart":19452,"identEnd":19480,"extentStart":19445,"extentEnd":19543,"fullyQualifiedName":"_initialize_at_program_start","identUtf16":{"start":{"lineNumber":533,"utf16Col":7},"end":{"lineNumber":533,"utf16Col":35}},"extentUtf16":{"start":{"lineNumber":533,"utf16Col":0},"end":{"lineNumber":535,"utf16Col":1}}},{"name":"_initialize_at_program_start","kind":"function","identStart":19487,"identEnd":19515,"extentStart":19487,"extentEnd":19517,"fullyQualifiedName":"_initialize_at_program_start::_initialize_at_program_start","identUtf16":{"start":{"lineNumber":534,"utf16Col":4},"end":{"lineNumber":534,"utf16Col":32}},"extentUtf16":{"start":{"lineNumber":534,"utf16Col":4},"end":{"lineNumber":534,"utf16Col":34}}},{"name":"map_compare","kind":"class","identStart":64700,"identEnd":64711,"extentStart":64693,"extentEnd":64810,"fullyQualifiedName":"map_compare","identUtf16":{"start":{"lineNumber":1238,"utf16Col":7},"end":{"lineNumber":1238,"utf16Col":18}},"extentUtf16":{"start":{"lineNumber":1238,"utf16Col":0},"end":{"lineNumber":1241,"utf16Col":1}}},{"name":"less","kind":"function","identStart":64754,"identEnd":64758,"extentStart":64754,"extentEnd":64782,"fullyQualifiedName":"map_compare::less","identUtf16":{"start":{"lineNumber":1239,"utf16Col":40},"end":{"lineNumber":1239,"utf16Col":44}},"extentUtf16":{"start":{"lineNumber":1239,"utf16Col":40},"end":{"lineNumber":1239,"utf16Col":68}}},{"name":"less","kind":"function","identStart":64899,"identEnd":64903,"extentStart":64899,"extentEnd":64933,"fullyQualifiedName":"less","identUtf16":{"start":{"lineNumber":1245,"utf16Col":40},"end":{"lineNumber":1245,"utf16Col":44}},"extentUtf16":{"start":{"lineNumber":1245,"utf16Col":40},"end":{"lineNumber":1245,"utf16Col":74}}},{"name":"less_loop","kind":"function","identStart":65026,"identEnd":65035,"extentStart":65026,"extentEnd":65083,"fullyQualifiedName":"less_loop","identUtf16":{"start":{"lineNumber":1250,"utf16Col":4},"end":{"lineNumber":1250,"utf16Col":13}},"extentUtf16":{"start":{"lineNumber":1250,"utf16Col":4},"end":{"lineNumber":1250,"utf16Col":61}}},{"name":"less","kind":"function","identStart":65340,"identEnd":65344,"extentStart":65340,"extentEnd":65380,"fullyQualifiedName":"less","identUtf16":{"start":{"lineNumber":1261,"utf16Col":40},"end":{"lineNumber":1261,"utf16Col":44}},"extentUtf16":{"start":{"lineNumber":1261,"utf16Col":40},"end":{"lineNumber":1261,"utf16Col":80}}},{"name":"less_loop","kind":"function","identStart":65473,"identEnd":65482,"extentStart":65473,"extentEnd":65536,"fullyQualifiedName":"less_loop","identUtf16":{"start":{"lineNumber":1266,"utf16Col":4},"end":{"lineNumber":1266,"utf16Col":13}},"extentUtf16":{"start":{"lineNumber":1266,"utf16Col":4},"end":{"lineNumber":1266,"utf16Col":67}}},{"name":"map","kind":"class","identStart":65785,"identEnd":65788,"extentStart":65778,"extentEnd":66662,"fullyQualifiedName":"map","identUtf16":{"start":{"lineNumber":1276,"utf16Col":7},"end":{"lineNumber":1276,"utf16Col":10}},"extentUtf16":{"start":{"lineNumber":1276,"utf16Col":0},"end":{"lineNumber":1304,"utf16Col":1}}},{"name":"map","kind":"function","identStart":65862,"identEnd":65865,"extentStart":65862,"extentEnd":65877,"fullyQualifiedName":"map::map","identUtf16":{"start":{"lineNumber":1279,"utf16Col":37},"end":{"lineNumber":1279,"utf16Col":40}},"extentUtf16":{"start":{"lineNumber":1279,"utf16Col":37},"end":{"lineNumber":1279,"utf16Col":52}}},{"name":"from_enum","kind":"function","identStart":65921,"identEnd":65930,"extentStart":65921,"extentEnd":65948,"fullyQualifiedName":"map::from_enum","identUtf16":{"start":{"lineNumber":1281,"utf16Col":30},"end":{"lineNumber":1281,"utf16Col":39}},"extentUtf16":{"start":{"lineNumber":1281,"utf16Col":30},"end":{"lineNumber":1281,"utf16Col":57}}},{"name":"to_enum","kind":"function","identStart":66095,"identEnd":66102,"extentStart":66095,"extentEnd":66117,"fullyQualifiedName":"map::to_enum","identUtf16":{"start":{"lineNumber":1285,"utf16Col":33},"end":{"lineNumber":1285,"utf16Col":40}},"extentUtf16":{"start":{"lineNumber":1285,"utf16Col":33},"end":{"lineNumber":1285,"utf16Col":55}}},{"name":"to_enum_nothrow","kind":"function","identStart":66274,"identEnd":66289,"extentStart":66274,"extentEnd":66322,"fullyQualifiedName":"map::to_enum_nothrow","identUtf16":{"start":{"lineNumber":1292,"utf16Col":4},"end":{"lineNumber":1292,"utf16Col":19}},"extentUtf16":{"start":{"lineNumber":1292,"utf16Col":4},"end":{"lineNumber":1292,"utf16Col":52}}}]}},"copilotInfo":null,"csrf_tokens":{"/aantron/better-enums/branches":{"post":"8JYTVLwXSffN7TbOyTnKW7BjHd478x1WbGGLT2aiGkMf2BCCGynMCIksjDZZkgq571wraZZRYdlh01D5QNdhuw"},"/repos/preferences":{"post":"W4SbBABCh0gYOY1BjyHKortbw-oI5PIezRWqvwda5YTVLWwnFx3yR-ZAnqyeYHhYC7MdYXk1pB9mEOvTclr1Pw"}}},"title":"better-enums/enum.h at master · aantron/better-enums"}
+// This file is part of Better Enums, released under the BSD 2-clause license.
+// See LICENSE.md for details, or visit http://github.com/aantron/better-enums.
+
+#pragma once
+
+#ifndef BETTER_ENUMS_ENUM_H
+#define BETTER_ENUMS_ENUM_H
+
+
+
+#include <cstddef>
+#include <cstring>
+#include <iosfwd>
+#include <stdexcept>
+
+
+// in-line, non-#pragma warning handling
+// not supported in very old compilers (namely gcc 4.4 or less)
+#ifdef __GNUC__
+#   ifdef __clang__
+#      define BETTER_ENUMS_IGNORE_OLD_CAST_HEADER _Pragma("clang diagnostic push")
+#      define BETTER_ENUMS_IGNORE_OLD_CAST_BEGIN _Pragma("clang diagnostic ignored \"-Wold-style-cast\"")
+#      define BETTER_ENUMS_IGNORE_OLD_CAST_END _Pragma("clang diagnostic pop")
+#      define BETTER_ENUMS_IGNORE_ATTRIBUTES_HEADER
+#      define BETTER_ENUMS_IGNORE_ATTRIBUTES_BEGIN
+#      define BETTER_ENUMS_IGNORE_ATTRIBUTES_END
+#   else
+#      define BETTER_ENUMS_GCC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100)
+#      if BETTER_ENUMS_GCC_VERSION > 40400
+#         define BETTER_ENUMS_IGNORE_OLD_CAST_HEADER _Pragma("GCC diagnostic push")
+#         define BETTER_ENUMS_IGNORE_OLD_CAST_BEGIN _Pragma("GCC diagnostic ignored \"-Wold-style-cast\"")
+#         define BETTER_ENUMS_IGNORE_OLD_CAST_END _Pragma("GCC diagnostic pop")
+#         if (BETTER_ENUMS_GCC_VERSION >= 70300)
+#               define BETTER_ENUMS_IGNORE_ATTRIBUTES_HEADER _Pragma("GCC diagnostic push")
+#               define BETTER_ENUMS_IGNORE_ATTRIBUTES_BEGIN _Pragma("GCC diagnostic ignored \"-Wattributes\"")
+#               define BETTER_ENUMS_IGNORE_ATTRIBUTES_END _Pragma("GCC diagnostic pop")
+#         else
+#               define BETTER_ENUMS_IGNORE_ATTRIBUTES_HEADER
+#               define BETTER_ENUMS_IGNORE_ATTRIBUTES_BEGIN
+#               define BETTER_ENUMS_IGNORE_ATTRIBUTES_END
+#         endif
+#      else
+#         define BETTER_ENUMS_IGNORE_OLD_CAST_HEADER
+#         define BETTER_ENUMS_IGNORE_OLD_CAST_BEGIN
+#         define BETTER_ENUMS_IGNORE_OLD_CAST_END
+#         define BETTER_ENUMS_IGNORE_ATTRIBUTES_HEADER
+#         define BETTER_ENUMS_IGNORE_ATTRIBUTES_BEGIN
+#         define BETTER_ENUMS_IGNORE_ATTRIBUTES_END
+#      endif
+#   endif
+#else // empty definitions for compilers that don't support _Pragma
+#   define BETTER_ENUMS_IGNORE_OLD_CAST_HEADER
+#   define BETTER_ENUMS_IGNORE_OLD_CAST_BEGIN
+#   define BETTER_ENUMS_IGNORE_OLD_CAST_END
+#   define BETTER_ENUMS_IGNORE_ATTRIBUTES_HEADER
+#   define BETTER_ENUMS_IGNORE_ATTRIBUTES_BEGIN
+#   define BETTER_ENUMS_IGNORE_ATTRIBUTES_END
+#endif
+
+// Feature detection.
+
+#ifdef __GNUC__
+#   ifdef __clang__
+#       if __has_feature(cxx_constexpr)
+#           define BETTER_ENUMS_HAVE_CONSTEXPR
+#       endif
+#       if !defined(__EXCEPTIONS) || !__has_feature(cxx_exceptions)
+#           define BETTER_ENUMS_NO_EXCEPTIONS
+#       endif
+#   else
+#       if defined(__GXX_EXPERIMENTAL_CXX0X__) || __cplusplus >= 201103L
+#           if (__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 6))
+#               define BETTER_ENUMS_HAVE_CONSTEXPR
+#           endif
+#       endif
+#       ifndef __EXCEPTIONS
+#           define BETTER_ENUMS_NO_EXCEPTIONS
+#       endif
+#   endif
+#endif
+
+#ifdef _MSC_VER
+#   if _MSC_VER >= 1911
+#       define BETTER_ENUMS_HAVE_CONSTEXPR
+#   endif
+#   ifdef __clang__
+#       if __has_feature(cxx_constexpr)
+#           define BETTER_ENUMS_HAVE_CONSTEXPR
+#       endif
+#   endif
+#   ifndef _CPPUNWIND
+#       define BETTER_ENUMS_NO_EXCEPTIONS
+#   endif
+#   if _MSC_VER < 1600
+#       define BETTER_ENUMS_VC2008_WORKAROUNDS
+#   endif
+#endif
+
+#ifdef BETTER_ENUMS_CONSTEXPR
+#   define BETTER_ENUMS_HAVE_CONSTEXPR
+#endif
+
+#ifdef BETTER_ENUMS_NO_CONSTEXPR
+#   ifdef BETTER_ENUMS_HAVE_CONSTEXPR
+#       undef BETTER_ENUMS_HAVE_CONSTEXPR
+#   endif
+#endif
+
+// GCC (and maybe clang) can be made to warn about using 0 or NULL when nullptr
+// is available, so Better Enums tries to use nullptr. This passage uses
+// availability of constexpr as a proxy for availability of nullptr, i.e. it
+// assumes that nullptr is available when compiling on the right versions of gcc
+// and clang with the right -std flag. This is actually slightly wrong, because
+// nullptr is also available in Visual C++, but constexpr isn't. This
+// imprecision doesn't matter, however, because VC++ doesn't have the warnings
+// that make using nullptr necessary.
+#ifdef BETTER_ENUMS_HAVE_CONSTEXPR
+#   define BETTER_ENUMS_CONSTEXPR_     constexpr
+#   define BETTER_ENUMS_NULLPTR        nullptr
+#else
+#   define BETTER_ENUMS_CONSTEXPR_
+#   define BETTER_ENUMS_NULLPTR        NULL
+#endif
+
+#ifndef BETTER_ENUMS_NO_EXCEPTIONS
+#   define BETTER_ENUMS_IF_EXCEPTIONS(x) x
+#else
+#   define BETTER_ENUMS_IF_EXCEPTIONS(x)
+#endif
+
+#ifdef __GNUC__
+#   define BETTER_ENUMS_UNUSED __attribute__((__unused__))
+#else
+#   define BETTER_ENUMS_UNUSED
+#endif
+
+
+
+// Higher-order preprocessor macros.
+
+#ifdef BETTER_ENUMS_MACRO_FILE
+#   include BETTER_ENUMS_MACRO_FILE
+#else
+
+#define BETTER_ENUMS_PP_MAP(macro, data, ...) \
+    BETTER_ENUMS_ID( \
+        BETTER_ENUMS_APPLY( \
+            BETTER_ENUMS_PP_MAP_VAR_COUNT, \
+            BETTER_ENUMS_PP_COUNT(__VA_ARGS__)) \
+        (macro, data, __VA_ARGS__))
+
+#define BETTER_ENUMS_PP_MAP_VAR_COUNT(count) BETTER_ENUMS_M ## count
+
+#define BETTER_ENUMS_APPLY(macro, ...) BETTER_ENUMS_ID(macro(__VA_ARGS__))
+
+#define BETTER_ENUMS_ID(x) x
+
+#define BETTER_ENUMS_M1(m, d, x) m(d,0,x)
+#define BETTER_ENUMS_M2(m,d,x,...) m(d,1,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M1(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M3(m,d,x,...) m(d,2,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M2(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M4(m,d,x,...) m(d,3,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M3(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M5(m,d,x,...) m(d,4,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M4(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M6(m,d,x,...) m(d,5,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M5(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M7(m,d,x,...) m(d,6,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M6(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M8(m,d,x,...) m(d,7,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M7(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M9(m,d,x,...) m(d,8,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M8(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M10(m,d,x,...) m(d,9,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M9(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M11(m,d,x,...) m(d,10,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M10(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M12(m,d,x,...) m(d,11,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M11(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M13(m,d,x,...) m(d,12,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M12(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M14(m,d,x,...) m(d,13,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M13(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M15(m,d,x,...) m(d,14,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M14(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M16(m,d,x,...) m(d,15,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M15(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M17(m,d,x,...) m(d,16,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M16(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M18(m,d,x,...) m(d,17,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M17(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M19(m,d,x,...) m(d,18,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M18(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M20(m,d,x,...) m(d,19,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M19(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M21(m,d,x,...) m(d,20,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M20(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M22(m,d,x,...) m(d,21,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M21(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M23(m,d,x,...) m(d,22,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M22(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M24(m,d,x,...) m(d,23,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M23(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M25(m,d,x,...) m(d,24,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M24(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M26(m,d,x,...) m(d,25,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M25(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M27(m,d,x,...) m(d,26,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M26(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M28(m,d,x,...) m(d,27,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M27(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M29(m,d,x,...) m(d,28,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M28(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M30(m,d,x,...) m(d,29,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M29(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M31(m,d,x,...) m(d,30,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M30(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M32(m,d,x,...) m(d,31,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M31(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M33(m,d,x,...) m(d,32,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M32(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M34(m,d,x,...) m(d,33,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M33(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M35(m,d,x,...) m(d,34,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M34(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M36(m,d,x,...) m(d,35,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M35(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M37(m,d,x,...) m(d,36,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M36(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M38(m,d,x,...) m(d,37,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M37(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M39(m,d,x,...) m(d,38,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M38(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M40(m,d,x,...) m(d,39,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M39(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M41(m,d,x,...) m(d,40,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M40(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M42(m,d,x,...) m(d,41,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M41(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M43(m,d,x,...) m(d,42,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M42(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M44(m,d,x,...) m(d,43,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M43(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M45(m,d,x,...) m(d,44,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M44(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M46(m,d,x,...) m(d,45,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M45(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M47(m,d,x,...) m(d,46,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M46(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M48(m,d,x,...) m(d,47,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M47(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M49(m,d,x,...) m(d,48,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M48(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M50(m,d,x,...) m(d,49,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M49(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M51(m,d,x,...) m(d,50,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M50(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M52(m,d,x,...) m(d,51,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M51(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M53(m,d,x,...) m(d,52,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M52(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M54(m,d,x,...) m(d,53,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M53(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M55(m,d,x,...) m(d,54,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M54(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M56(m,d,x,...) m(d,55,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M55(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M57(m,d,x,...) m(d,56,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M56(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M58(m,d,x,...) m(d,57,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M57(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M59(m,d,x,...) m(d,58,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M58(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M60(m,d,x,...) m(d,59,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M59(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M61(m,d,x,...) m(d,60,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M60(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M62(m,d,x,...) m(d,61,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M61(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M63(m,d,x,...) m(d,62,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M62(m,d,__VA_ARGS__))
+#define BETTER_ENUMS_M64(m,d,x,...) m(d,63,x) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_M63(m,d,__VA_ARGS__))
+
+#define BETTER_ENUMS_PP_COUNT_IMPL(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10,    \
+    _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, _21, _22, _23, _24, _25, \
+    _26, _27, _28, _29, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _40, \
+    _41, _42, _43, _44, _45, _46, _47, _48, _49, _50, _51, _52, _53, _54, _55, \
+    _56, _57, _58, _59, _60, _61, _62, _63, _64, count, ...) count
+
+#define BETTER_ENUMS_PP_COUNT(...) \
+    BETTER_ENUMS_ID(BETTER_ENUMS_PP_COUNT_IMPL(__VA_ARGS__, 64, 63, 62, 61, 60,\
+        59, 58, 57, 56, 55, 54, 53, 52, 51, 50, 49, 48, 47, 46, 45, 44, 43, 42,\
+        41, 40, 39, 38, 37, 36, 35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24,\
+        23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, \
+        4, 3, 2, 1))
+
+#define BETTER_ENUMS_ITERATE(X, f, l) X(f, l, 0) X(f, l, 1) X(f, l, 2)         \
+    X(f, l, 3) X(f, l, 4) X(f, l, 5) X(f, l, 6) X(f, l, 7) X(f, l, 8)          \
+    X(f, l, 9) X(f, l, 10) X(f, l, 11) X(f, l, 12) X(f, l, 13) X(f, l, 14)     \
+    X(f, l, 15) X(f, l, 16) X(f, l, 17) X(f, l, 18) X(f, l, 19) X(f, l, 20)    \
+    X(f, l, 21) X(f, l, 22) X(f, l, 23)
+
+#endif // #ifdef BETTER_ENUMS_MACRO_FILE else case
+
+
+
+namespace better_enums {
+
+
+// Optional type.
+
+template <typename T>
+BETTER_ENUMS_CONSTEXPR_ inline T _default()
+{
+    return static_cast<typename T::_enumerated>(0);
+}
+
+template <>
+BETTER_ENUMS_CONSTEXPR_ inline const char* _default<const char*>()
+{
+    return BETTER_ENUMS_NULLPTR;
+}
+
+template <>
+BETTER_ENUMS_CONSTEXPR_ inline std::size_t _default<std::size_t>()
+{
+    return 0;
+}
+
+template <typename T>
+struct optional {
+    BETTER_ENUMS_CONSTEXPR_ optional() :
+        _valid(false), _value(_default<T>()) { }
+
+    BETTER_ENUMS_CONSTEXPR_ optional(T v) : _valid(true), _value(v) { }
+
+    BETTER_ENUMS_CONSTEXPR_ const T& operator *() const { return _value; }
+    BETTER_ENUMS_CONSTEXPR_ const T* operator ->() const { return &_value; }
+
+    BETTER_ENUMS_CONSTEXPR_ operator bool() const { return _valid; }
+
+    BETTER_ENUMS_CONSTEXPR_ const T& value() const { return _value; }
+
+  private:
+    bool    _valid;
+    T       _value;
+};
+
+template <typename CastTo, typename Element>
+BETTER_ENUMS_CONSTEXPR_ static optional<CastTo>
+_map_index(const Element *array, optional<std::size_t> index)
+{
+    return index ? static_cast<CastTo>(array[*index]) : optional<CastTo>();
+}
+
+#ifdef BETTER_ENUMS_VC2008_WORKAROUNDS
+
+#define BETTER_ENUMS_OR_THROW                                                  \
+    if (!maybe)                                                                \
+        throw std::runtime_error(message);                                     \
+                                                                               \
+    return *maybe;
+
+#else
+
+#define BETTER_ENUMS_OR_THROW                                                  \
+    return maybe ? *maybe : throw std::runtime_error(message);
+
+#endif
+
+BETTER_ENUMS_IF_EXCEPTIONS(
+template <typename T>
+BETTER_ENUMS_CONSTEXPR_ static T _or_throw(optional<T> maybe,
+                                           const char *message)
+{
+    BETTER_ENUMS_OR_THROW
+}
+)
+
+template <typename T>
+BETTER_ENUMS_CONSTEXPR_ static T* _or_null(optional<T*> maybe)
+{
+    return maybe ? *maybe : BETTER_ENUMS_NULLPTR;
+}
+
+template <typename T>
+BETTER_ENUMS_CONSTEXPR_ static T _or_zero(optional<T> maybe)
+{
+    return maybe ? *maybe : T::_from_integral_unchecked(0);
+}
+
+
+
+// Functional sequencing. This is essentially a comma operator wrapped in a
+// constexpr function. g++ 4.7 doesn't "accept" integral constants in the second
+// position for the comma operator, and emits an external symbol, which then
+// causes a linking error.
+
+template <typename T, typename U>
+BETTER_ENUMS_CONSTEXPR_ U
+continue_with(T, U value) { return value; }
+
+
+
+// Values array declaration helper.
+
+//! Get intrinsic value of an (Enum::value) by taking advantage of
+// C-conversion's parentheses priority
+template <typename EnumType>
+struct _eat_assign {
+    explicit BETTER_ENUMS_CONSTEXPR_ _eat_assign(EnumType value) : _value(value)
+        { }
+
+    template <typename Any>
+    BETTER_ENUMS_CONSTEXPR_ const _eat_assign&
+    operator =(Any) const { return *this; }
+
+    BETTER_ENUMS_CONSTEXPR_ operator EnumType () const { return _value; }
+
+  private:
+    EnumType    _value;
+};
+
+
+
+// Iterables.
+
+template <typename Element>
+struct _iterable {
+    typedef const Element*  iterator;
+
+    BETTER_ENUMS_CONSTEXPR_ iterator begin() const { return iterator(_array); }
+    BETTER_ENUMS_CONSTEXPR_ iterator end() const
+        { return iterator(_array + _size); }
+    BETTER_ENUMS_CONSTEXPR_ std::size_t size() const { return _size; }
+    BETTER_ENUMS_CONSTEXPR_ const Element& operator [](std::size_t index) const
+        { return _array[index]; }
+
+    BETTER_ENUMS_CONSTEXPR_ _iterable(const Element *array, std::size_t s) :
+        _array(array), _size(s) { }
+
+  private:
+    const Element * const   _array;
+    const std::size_t       _size;
+};
+
+
+
+// String routines.
+
+BETTER_ENUMS_CONSTEXPR_ static const char       *_name_enders = "= \t\n";
+
+BETTER_ENUMS_CONSTEXPR_ inline bool _ends_name(char c, std::size_t index = 0)
+{
+    return
+        c == _name_enders[index] ? true  :
+        _name_enders[index] == '\0' ? false :
+        _ends_name(c, index + 1);
+}
+
+BETTER_ENUMS_CONSTEXPR_ inline bool _has_initializer(const char *s,
+                                                     std::size_t index = 0)
+{
+    return
+        s[index] == '\0' ? false :
+        s[index] == '=' ? true :
+        _has_initializer(s, index + 1);
+}
+
+BETTER_ENUMS_CONSTEXPR_ inline std::size_t
+_constant_length(const char *s, std::size_t index = 0)
+{
+    return _ends_name(s[index]) ? index : _constant_length(s, index + 1);
+}
+
+BETTER_ENUMS_CONSTEXPR_ inline char
+_select(const char *from, std::size_t from_length, std::size_t index)
+{
+    return index >= from_length ? '\0' : from[index];
+}
+
+BETTER_ENUMS_CONSTEXPR_ inline char _to_lower_ascii(char c)
+{
+    return c >= 0x41 && c <= 0x5A ? static_cast<char>(c + 0x20) : c;
+}
+
+BETTER_ENUMS_CONSTEXPR_ inline bool _names_match(const char *stringizedName,
+                                                 const char *referenceName,
+                                                 std::size_t index = 0)
+{
+    return
+        _ends_name(stringizedName[index]) ? referenceName[index] == '\0' :
+        referenceName[index] == '\0' ? false :
+        stringizedName[index] != referenceName[index] ? false :
+        _names_match(stringizedName, referenceName, index + 1);
+}
+
+BETTER_ENUMS_CONSTEXPR_ inline bool
+_names_match_nocase(const char *stringizedName, const char *referenceName,
+                    std::size_t index = 0)
+{
+    return
+        _ends_name(stringizedName[index]) ? referenceName[index] == '\0' :
+        referenceName[index] == '\0' ? false :
+        _to_lower_ascii(stringizedName[index]) !=
+            _to_lower_ascii(referenceName[index]) ? false :
+        _names_match_nocase(stringizedName, referenceName, index + 1);
+}
+
+inline void _trim_names(const char * const *raw_names,
+                        const char **trimmed_names,
+                        char *storage, std::size_t count)
+{
+    std::size_t     offset = 0;
+
+    for (std::size_t index = 0; index < count; ++index) {
+        trimmed_names[index] = storage + offset;
+
+        std::size_t trimmed_length =
+            std::strcspn(raw_names[index], _name_enders);
+        storage[offset + trimmed_length] = '\0';
+
+        std::size_t raw_length = std::strlen(raw_names[index]);
+        offset += raw_length + 1;
+    }
+}
+
+
+
+// Eager initialization.
+template <typename Enum>
+struct _initialize_at_program_start {
+    _initialize_at_program_start() { Enum::initialize(); }
+};
+
+} // namespace better_enums
+
+
+
+// Array generation macros.
+
+#define BETTER_ENUMS_EAT_ASSIGN_SINGLE(EnumType, index, expression)            \
+    (EnumType)((::better_enums::_eat_assign<EnumType>)EnumType::expression),
+
+#define BETTER_ENUMS_EAT_ASSIGN(EnumType, ...)                                 \
+    BETTER_ENUMS_ID(                                                           \
+        BETTER_ENUMS_PP_MAP(                                                   \
+            BETTER_ENUMS_EAT_ASSIGN_SINGLE, EnumType, __VA_ARGS__))
+
+
+
+#ifdef BETTER_ENUMS_HAVE_CONSTEXPR
+
+
+
+#define BETTER_ENUMS_SELECT_SINGLE_CHARACTER(from, from_length, index)         \
+    ::better_enums::_select(from, from_length, index),
+
+#define BETTER_ENUMS_SELECT_CHARACTERS(from, from_length)                      \
+    BETTER_ENUMS_ITERATE(                                                      \
+        BETTER_ENUMS_SELECT_SINGLE_CHARACTER, from, from_length)
+
+
+
+#define BETTER_ENUMS_TRIM_SINGLE_STRING(ignored, index, expression)            \
+constexpr std::size_t   _length_ ## index =                                    \
+    ::better_enums::_constant_length(#expression);                             \
+constexpr const char    _trimmed_ ## index [] =                                \
+    { BETTER_ENUMS_SELECT_CHARACTERS(#expression, _length_ ## index) };        \
+constexpr const char    *_final_ ## index =                                    \
+    ::better_enums::_has_initializer(#expression) ?                            \
+        _trimmed_ ## index : #expression;
+
+#define BETTER_ENUMS_TRIM_STRINGS(...)                                         \
+    BETTER_ENUMS_ID(                                                           \
+        BETTER_ENUMS_PP_MAP(                                                   \
+            BETTER_ENUMS_TRIM_SINGLE_STRING, ignored, __VA_ARGS__))
+
+
+
+#define BETTER_ENUMS_REFER_TO_SINGLE_STRING(ignored, index, expression)        \
+    _final_ ## index,
+
+#define BETTER_ENUMS_REFER_TO_STRINGS(...)                                     \
+    BETTER_ENUMS_ID(                                                           \
+        BETTER_ENUMS_PP_MAP(                                                   \
+            BETTER_ENUMS_REFER_TO_SINGLE_STRING, ignored, __VA_ARGS__))
+
+
+
+#endif // #ifdef BETTER_ENUMS_HAVE_CONSTEXPR
+
+
+
+#define BETTER_ENUMS_STRINGIZE_SINGLE(ignored, index, expression)  #expression,
+
+#define BETTER_ENUMS_STRINGIZE(...)                                            \
+    BETTER_ENUMS_ID(                                                           \
+        BETTER_ENUMS_PP_MAP(                                                   \
+            BETTER_ENUMS_STRINGIZE_SINGLE, ignored, __VA_ARGS__))
+
+#define BETTER_ENUMS_RESERVE_STORAGE_SINGLE(ignored, index, expression)        \
+    #expression ","
+
+#define BETTER_ENUMS_RESERVE_STORAGE(...)                                      \
+    BETTER_ENUMS_ID(                                                           \
+        BETTER_ENUMS_PP_MAP(                                                   \
+            BETTER_ENUMS_RESERVE_STORAGE_SINGLE, ignored, __VA_ARGS__))
+
+
+
+// The enums proper.
+
+#define BETTER_ENUMS_NS(EnumType)  better_enums_data_ ## EnumType
+
+#ifdef BETTER_ENUMS_VC2008_WORKAROUNDS
+
+#define BETTER_ENUMS_COPY_CONSTRUCTOR(Enum)                                    \
+        BETTER_ENUMS_CONSTEXPR_ Enum(const Enum &other) :                      \
+            _value(other._value) { }
+
+#else
+
+#define BETTER_ENUMS_COPY_CONSTRUCTOR(Enum)
+
+#endif
+
+#ifndef BETTER_ENUMS_CLASS_ATTRIBUTE
+#   define BETTER_ENUMS_CLASS_ATTRIBUTE
+#endif
+
+#define BETTER_ENUMS_TYPE(SetUnderlyingType, SwitchType, GenerateSwitchType,   \
+                          GenerateStrings, ToStringConstexpr,                  \
+                          DeclareInitialize, DefineInitialize, CallInitialize, \
+                          Enum, Underlying, ...)                               \
+                                                                               \
+namespace better_enums_data_ ## Enum {                                         \
+                                                                               \
+BETTER_ENUMS_ID(GenerateSwitchType(Underlying, __VA_ARGS__))                   \
+                                                                               \
+}                                                                              \
+                                                                               \
+class BETTER_ENUMS_CLASS_ATTRIBUTE Enum {                                      \
+  private:                                                                     \
+    typedef ::better_enums::optional<Enum>                  _optional;         \
+    typedef ::better_enums::optional<std::size_t>           _optional_index;   \
+                                                                               \
+  public:                                                                      \
+    typedef Underlying                                      _integral;         \
+                                                                               \
+    enum _enumerated SetUnderlyingType(Underlying) { __VA_ARGS__ };            \
+                                                                               \
+    BETTER_ENUMS_CONSTEXPR_ Enum(_enumerated value) : _value(value) { }        \
+                                                                               \
+    BETTER_ENUMS_COPY_CONSTRUCTOR(Enum)                                        \
+                                                                               \
+    BETTER_ENUMS_CONSTEXPR_ operator SwitchType(Enum)() const                  \
+    {                                                                          \
+        return SwitchType(Enum)(_value);                                       \
+    }                                                                          \
+                                                                               \
+    BETTER_ENUMS_CONSTEXPR_ _integral _to_integral() const;                    \
+    BETTER_ENUMS_IF_EXCEPTIONS(                                                \
+    BETTER_ENUMS_CONSTEXPR_ static Enum _from_integral(_integral value);       \
+    )                                                                          \
+    BETTER_ENUMS_CONSTEXPR_ static Enum                                        \
+    _from_integral_unchecked(_integral value);                                 \
+    BETTER_ENUMS_CONSTEXPR_ static _optional                                   \
+    _from_integral_nothrow(_integral value);                                   \
+                                                                               \
+    BETTER_ENUMS_CONSTEXPR_ std::size_t _to_index() const;                     \
+    BETTER_ENUMS_IF_EXCEPTIONS(                                                \
+    BETTER_ENUMS_CONSTEXPR_ static Enum _from_index(std::size_t index);        \
+    )                                                                          \
+    BETTER_ENUMS_CONSTEXPR_ static Enum                                        \
+    _from_index_unchecked(std::size_t index);                                  \
+    BETTER_ENUMS_CONSTEXPR_ static _optional                                   \
+    _from_index_nothrow(std::size_t index);                                    \
+                                                                               \
+    ToStringConstexpr const char* _to_string() const;                          \
+    BETTER_ENUMS_IF_EXCEPTIONS(                                                \
+    BETTER_ENUMS_CONSTEXPR_ static Enum _from_string(const char *name);        \
+    )                                                                          \
+    BETTER_ENUMS_CONSTEXPR_ static _optional                                   \
+    _from_string_nothrow(const char *name);                                    \
+                                                                               \
+    BETTER_ENUMS_IF_EXCEPTIONS(                                                \
+    BETTER_ENUMS_CONSTEXPR_ static Enum _from_string_nocase(const char *name); \
+    )                                                                          \
+    BETTER_ENUMS_CONSTEXPR_ static _optional                                   \
+    _from_string_nocase_nothrow(const char *name);                             \
+                                                                               \
+    BETTER_ENUMS_CONSTEXPR_ static bool _is_valid(_integral value);            \
+    BETTER_ENUMS_CONSTEXPR_ static bool _is_valid(const char *name);           \
+    BETTER_ENUMS_CONSTEXPR_ static bool _is_valid_nocase(const char *name);    \
+                                                                               \
+    typedef ::better_enums::_iterable<Enum>             _value_iterable;       \
+    typedef ::better_enums::_iterable<const char*>      _name_iterable;        \
+                                                                               \
+    typedef _value_iterable::iterator                   _value_iterator;       \
+    typedef _name_iterable::iterator                    _name_iterator;        \
+                                                                               \
+    BETTER_ENUMS_CONSTEXPR_ static const std::size_t _size_constant =          \
+        BETTER_ENUMS_ID(BETTER_ENUMS_PP_COUNT(__VA_ARGS__));                   \
+    BETTER_ENUMS_CONSTEXPR_ static std::size_t _size()                         \
+        { return _size_constant; }                                             \
+                                                                               \
+    BETTER_ENUMS_CONSTEXPR_ static const char* _name();                        \
+    BETTER_ENUMS_CONSTEXPR_ static _value_iterable _values();                  \
+    ToStringConstexpr static _name_iterable _names();                          \
+                                                                               \
+    _integral      _value;                                                     \
+                                                                               \
+    BETTER_ENUMS_DEFAULT_CONSTRUCTOR(Enum)                                     \
+                                                                               \
+  private:                                                                     \
+    explicit BETTER_ENUMS_CONSTEXPR_ Enum(const _integral &value) :            \
+        _value(value) { }                                                      \
+                                                                               \
+    DeclareInitialize                                                          \
+                                                                               \
+    BETTER_ENUMS_CONSTEXPR_ static _optional_index                             \
+    _from_value_loop(_integral value, std::size_t index = 0);                  \
+    BETTER_ENUMS_CONSTEXPR_ static _optional_index                             \
+    _from_string_loop(const char *name, std::size_t index = 0);                \
+    BETTER_ENUMS_CONSTEXPR_ static _optional_index                             \
+    _from_string_nocase_loop(const char *name, std::size_t index = 0);         \
+                                                                               \
+    friend struct ::better_enums::_initialize_at_program_start<Enum>;          \
+};                                                                             \
+                                                                               \
+namespace better_enums_data_ ## Enum {                                         \
+                                                                               \
+static ::better_enums::_initialize_at_program_start<Enum>                      \
+                                                _force_initialization;         \
+                                                                               \
+enum _putNamesInThisScopeAlso { __VA_ARGS__ };                                 \
+                                                                               \
+BETTER_ENUMS_IGNORE_OLD_CAST_HEADER                                            \
+BETTER_ENUMS_IGNORE_OLD_CAST_BEGIN                                             \
+BETTER_ENUMS_CONSTEXPR_ const Enum      _value_array[] =                       \
+    { BETTER_ENUMS_ID(BETTER_ENUMS_EAT_ASSIGN(Enum, __VA_ARGS__)) };           \
+BETTER_ENUMS_IGNORE_OLD_CAST_END                                               \
+                                                                               \
+BETTER_ENUMS_ID(GenerateStrings(Enum, __VA_ARGS__))                            \
+                                                                               \
+}                                                                              \
+                                                                               \
+BETTER_ENUMS_IGNORE_ATTRIBUTES_HEADER                                          \
+BETTER_ENUMS_IGNORE_ATTRIBUTES_BEGIN                                           \
+BETTER_ENUMS_UNUSED BETTER_ENUMS_CONSTEXPR_                                    \
+inline const Enum                                                              \
+operator +(Enum::_enumerated enumerated)                                       \
+{                                                                              \
+    return static_cast<Enum>(enumerated);                                      \
+}                                                                              \
+BETTER_ENUMS_IGNORE_ATTRIBUTES_END                                             \
+                                                                               \
+BETTER_ENUMS_CONSTEXPR_ inline Enum::_optional_index                           \
+Enum::_from_value_loop(Enum::_integral value, std::size_t index)               \
+{                                                                              \
+    return                                                                     \
+        index == _size() ?                                                     \
+            _optional_index() :                                                \
+            BETTER_ENUMS_NS(Enum)::_value_array[index]._value == value ?       \
+                _optional_index(index) :                                       \
+                _from_value_loop(value, index + 1);                            \
+}                                                                              \
+                                                                               \
+BETTER_ENUMS_CONSTEXPR_ inline Enum::_optional_index                           \
+Enum::_from_string_loop(const char *name, std::size_t index)                   \
+{                                                                              \
+    return                                                                     \
+        index == _size() ? _optional_index() :                                 \
+        ::better_enums::_names_match(                                          \
+            BETTER_ENUMS_NS(Enum)::_raw_names()[index], name) ?                \
+            _optional_index(index) :                                           \
+            _from_string_loop(name, index + 1);                                \
+}                                                                              \
+                                                                               \
+BETTER_ENUMS_CONSTEXPR_ inline Enum::_optional_index                           \
+Enum::_from_string_nocase_loop(const char *name, std::size_t index)            \
+{                                                                              \
+    return                                                                     \
+        index == _size() ? _optional_index() :                                 \
+            ::better_enums::_names_match_nocase(                               \
+                BETTER_ENUMS_NS(Enum)::_raw_names()[index], name) ?            \
+                    _optional_index(index) :                                   \
+                    _from_string_nocase_loop(name, index + 1);                 \
+}                                                                              \
+                                                                               \
+BETTER_ENUMS_CONSTEXPR_ inline Enum::_integral Enum::_to_integral() const      \
+{                                                                              \
+    return _integral(_value);                                                  \
+}                                                                              \
+                                                                               \
+BETTER_ENUMS_CONSTEXPR_ inline std::size_t Enum::_to_index() const             \
+{                                                                              \
+    return *_from_value_loop(_value);                                          \
+}                                                                              \
+                                                                               \
+BETTER_ENUMS_CONSTEXPR_ inline Enum                                            \
+Enum::_from_index_unchecked(std::size_t index)                                 \
+{                                                                              \
+    return                                                                     \
+        ::better_enums::_or_zero(_from_index_nothrow(index));                  \
+}                                                                              \
+                                                                               \
+BETTER_ENUMS_CONSTEXPR_ inline Enum::_optional                                 \
+Enum::_from_index_nothrow(std::size_t index)                                   \
+{                                                                              \
+    return                                                                     \
+        index >= _size() ?                                                     \
+            _optional() :                                                      \
+             _optional(BETTER_ENUMS_NS(Enum)::_value_array[index]);            \
+}                                                                              \
+                                                                               \
+BETTER_ENUMS_IF_EXCEPTIONS(                                                    \
+BETTER_ENUMS_CONSTEXPR_ inline Enum Enum::_from_index(std::size_t index)       \
+{                                                                              \
+    return                                                                     \
+        ::better_enums::_or_throw(_from_index_nothrow(index),                  \
+                                  #Enum "::_from_index: invalid argument");    \
+}                                                                              \
+)                                                                              \
+                                                                               \
+BETTER_ENUMS_CONSTEXPR_ inline Enum                                            \
+Enum::_from_integral_unchecked(_integral value)                                \
+{                                                                              \
+    return static_cast<_enumerated>(value);                                    \
+}                                                                              \
+                                                                               \
+BETTER_ENUMS_CONSTEXPR_ inline Enum::_optional                                 \
+Enum::_from_integral_nothrow(_integral value)                                  \
+{                                                                              \
+    return                                                                     \
+        ::better_enums::_map_index<Enum>(BETTER_ENUMS_NS(Enum)::_value_array,  \
+                                         _from_value_loop(value));             \
+}                                                                              \
+                                                                               \
+BETTER_ENUMS_IF_EXCEPTIONS(                                                    \
+BETTER_ENUMS_CONSTEXPR_ inline Enum Enum::_from_integral(_integral value)      \
+{                                                                              \
+    return                                                                     \
+        ::better_enums::_or_throw(_from_integral_nothrow(value),               \
+                                  #Enum "::_from_integral: invalid argument"); \
+}                                                                              \
+)                                                                              \
+                                                                               \
+ToStringConstexpr inline const char* Enum::_to_string() const                  \
+{                                                                              \
+    return                                                                     \
+        ::better_enums::_or_null(                                              \
+            ::better_enums::_map_index<const char*>(                           \
+                BETTER_ENUMS_NS(Enum)::_name_array(),                          \
+                _from_value_loop(CallInitialize(_value))));                    \
+}                                                                              \
+                                                                               \
+BETTER_ENUMS_CONSTEXPR_ inline Enum::_optional                                 \
+Enum::_from_string_nothrow(const char *name)                                   \
+{                                                                              \
+    return                                                                     \
+        ::better_enums::_map_index<Enum>(                                      \
+            BETTER_ENUMS_NS(Enum)::_value_array, _from_string_loop(name));     \
+}                                                                              \
+                                                                               \
+BETTER_ENUMS_IF_EXCEPTIONS(                                                    \
+BETTER_ENUMS_CONSTEXPR_ inline Enum Enum::_from_string(const char *name)       \
+{                                                                              \
+    return                                                                     \
+        ::better_enums::_or_throw(_from_string_nothrow(name),                  \
+                                  #Enum "::_from_string: invalid argument");   \
+}                                                                              \
+)                                                                              \
+                                                                               \
+BETTER_ENUMS_CONSTEXPR_ inline Enum::_optional                                 \
+Enum::_from_string_nocase_nothrow(const char *name)                            \
+{                                                                              \
+    return                                                                     \
+        ::better_enums::_map_index<Enum>(BETTER_ENUMS_NS(Enum)::_value_array,  \
+                                         _from_string_nocase_loop(name));      \
+}                                                                              \
+                                                                               \
+BETTER_ENUMS_IF_EXCEPTIONS(                                                    \
+BETTER_ENUMS_CONSTEXPR_ inline Enum Enum::_from_string_nocase(const char *name)\
+{                                                                              \
+    return                                                                     \
+        ::better_enums::_or_throw(                                             \
+            _from_string_nocase_nothrow(name),                                 \
+            #Enum "::_from_string_nocase: invalid argument");                  \
+}                                                                              \
+)                                                                              \
+                                                                               \
+BETTER_ENUMS_CONSTEXPR_ inline bool Enum::_is_valid(_integral value)           \
+{                                                                              \
+    return _from_value_loop(value);                                            \
+}                                                                              \
+                                                                               \
+BETTER_ENUMS_CONSTEXPR_ inline bool Enum::_is_valid(const char *name)          \
+{                                                                              \
+    return _from_string_loop(name);                                            \
+}                                                                              \
+                                                                               \
+BETTER_ENUMS_CONSTEXPR_ inline bool Enum::_is_valid_nocase(const char *name)   \
+{                                                                              \
+    return _from_string_nocase_loop(name);                                     \
+}                                                                              \
+                                                                               \
+BETTER_ENUMS_CONSTEXPR_ inline const char* Enum::_name()                       \
+{                                                                              \
+    return #Enum;                                                              \
+}                                                                              \
+                                                                               \
+BETTER_ENUMS_CONSTEXPR_ inline Enum::_value_iterable Enum::_values()           \
+{                                                                              \
+    return _value_iterable(BETTER_ENUMS_NS(Enum)::_value_array, _size());      \
+}                                                                              \
+                                                                               \
+ToStringConstexpr inline Enum::_name_iterable Enum::_names()                   \
+{                                                                              \
+    return                                                                     \
+        _name_iterable(BETTER_ENUMS_NS(Enum)::_name_array(),                   \
+                       CallInitialize(_size()));                               \
+}                                                                              \
+                                                                               \
+DefineInitialize(Enum)                                                         \
+                                                                               \
+BETTER_ENUMS_IGNORE_ATTRIBUTES_HEADER                                          \
+BETTER_ENUMS_IGNORE_ATTRIBUTES_BEGIN                                           \
+BETTER_ENUMS_UNUSED BETTER_ENUMS_CONSTEXPR_                                    \
+inline bool operator ==(const Enum &a, const Enum &b)                          \
+    { return a._to_integral() == b._to_integral(); }                           \
+                                                                               \
+BETTER_ENUMS_UNUSED BETTER_ENUMS_CONSTEXPR_                                    \
+inline bool operator !=(const Enum &a, const Enum &b)                          \
+    { return a._to_integral() != b._to_integral(); }                           \
+                                                                               \
+BETTER_ENUMS_UNUSED BETTER_ENUMS_CONSTEXPR_                                    \
+inline bool operator <(const Enum &a, const Enum &b)                           \
+    { return a._to_integral() < b._to_integral(); }                            \
+                                                                               \
+BETTER_ENUMS_UNUSED BETTER_ENUMS_CONSTEXPR_                                    \
+inline bool operator <=(const Enum &a, const Enum &b)                          \
+    { return a._to_integral() <= b._to_integral(); }                           \
+                                                                               \
+BETTER_ENUMS_UNUSED BETTER_ENUMS_CONSTEXPR_                                    \
+inline bool operator >(const Enum &a, const Enum &b)                           \
+    { return a._to_integral() > b._to_integral(); }                            \
+                                                                               \
+BETTER_ENUMS_UNUSED BETTER_ENUMS_CONSTEXPR_                                    \
+inline bool operator >=(const Enum &a, const Enum &b)                          \
+    { return a._to_integral() >= b._to_integral(); }                           \
+BETTER_ENUMS_IGNORE_ATTRIBUTES_END                                             \
+                                                                               \
+                                                                               \
+template <typename Char, typename Traits>                                      \
+std::basic_ostream<Char, Traits>&                                              \
+operator <<(std::basic_ostream<Char, Traits>& stream, const Enum &value)       \
+{                                                                              \
+    return stream << value._to_string();                                       \
+}                                                                              \
+                                                                               \
+template <typename Char, typename Traits>                                      \
+std::basic_istream<Char, Traits>&                                              \
+operator >>(std::basic_istream<Char, Traits>& stream, Enum &value)             \
+{                                                                              \
+    std::basic_string<Char, Traits>     buffer;                                \
+                                                                               \
+    stream >> buffer;                                                          \
+    ::better_enums::optional<Enum>      converted =                            \
+        Enum::_from_string_nothrow(buffer.c_str());                            \
+                                                                               \
+    if (converted)                                                             \
+        value = *converted;                                                    \
+    else                                                                       \
+        stream.setstate(std::basic_istream<Char, Traits>::failbit);            \
+                                                                               \
+    return stream;                                                             \
+}
+
+
+
+// Enum feature options.
+
+// C++98, C++11
+#define BETTER_ENUMS_CXX98_UNDERLYING_TYPE(Underlying)
+
+// C++11
+#define BETTER_ENUMS_CXX11_UNDERLYING_TYPE(Underlying)                         \
+    : Underlying
+
+#if defined(_MSC_VER) && _MSC_VER >= 1700
+// VS 2012 and above fully support strongly typed enums and will warn about
+// incorrect usage.
+#   define BETTER_ENUMS_LEGACY_UNDERLYING_TYPE(Underlying) \
+        BETTER_ENUMS_CXX11_UNDERLYING_TYPE(Underlying)
+#else
+#   define BETTER_ENUMS_LEGACY_UNDERLYING_TYPE(Underlying) \
+        BETTER_ENUMS_CXX98_UNDERLYING_TYPE(Underlying)
+#endif
+
+// C++98, C++11
+#define BETTER_ENUMS_REGULAR_ENUM_SWITCH_TYPE(Type)                            \
+    _enumerated
+
+// C++11
+#define BETTER_ENUMS_ENUM_CLASS_SWITCH_TYPE(Type)                              \
+    BETTER_ENUMS_NS(Type)::_enumClassForSwitchStatements
+
+// C++98, C++11
+#define BETTER_ENUMS_REGULAR_ENUM_SWITCH_TYPE_GENERATE(Underlying, ...)
+
+// C++11
+#define BETTER_ENUMS_ENUM_CLASS_SWITCH_TYPE_GENERATE(Underlying, ...)          \
+    enum class _enumClassForSwitchStatements : Underlying { __VA_ARGS__ };
+
+// C++98
+#define BETTER_ENUMS_CXX98_TRIM_STRINGS_ARRAYS(Enum, ...)                      \
+    inline const char** _raw_names()                                           \
+    {                                                                          \
+        static const char   *value[] =                                         \
+            { BETTER_ENUMS_ID(BETTER_ENUMS_STRINGIZE(__VA_ARGS__)) };          \
+        return value;                                                          \
+    }                                                                          \
+                                                                               \
+    inline char* _name_storage()                                               \
+    {                                                                          \
+        static char         storage[] =                                        \
+            BETTER_ENUMS_ID(BETTER_ENUMS_RESERVE_STORAGE(__VA_ARGS__));        \
+        return storage;                                                        \
+    }                                                                          \
+                                                                               \
+    inline const char** _name_array()                                          \
+    {                                                                          \
+        static const char   *value[Enum::_size_constant];                      \
+        return value;                                                          \
+    }                                                                          \
+                                                                               \
+    inline bool& _initialized()                                                \
+    {                                                                          \
+        static bool         value = false;                                     \
+        return value;                                                          \
+    }
+
+// C++11 fast version
+#define BETTER_ENUMS_CXX11_PARTIAL_CONSTEXPR_TRIM_STRINGS_ARRAYS(Enum, ...)    \
+    constexpr const char    *_the_raw_names[] =                                \
+        { BETTER_ENUMS_ID(BETTER_ENUMS_STRINGIZE(__VA_ARGS__)) };              \
+                                                                               \
+    constexpr const char * const * _raw_names()                                \
+    {                                                                          \
+        return _the_raw_names;                                                 \
+    }                                                                          \
+                                                                               \
+    inline char* _name_storage()                                               \
+    {                                                                          \
+        static char         storage[] =                                        \
+            BETTER_ENUMS_ID(BETTER_ENUMS_RESERVE_STORAGE(__VA_ARGS__));        \
+        return storage;                                                        \
+    }                                                                          \
+                                                                               \
+    inline const char** _name_array()                                          \
+    {                                                                          \
+        static const char   *value[Enum::_size_constant];                      \
+        return value;                                                          \
+    }                                                                          \
+                                                                               \
+    inline bool& _initialized()                                                \
+    {                                                                          \
+        static bool         value = false;                                     \
+        return value;                                                          \
+    }
+
+// C++11 slow all-constexpr version
+#define BETTER_ENUMS_CXX11_FULL_CONSTEXPR_TRIM_STRINGS_ARRAYS(Enum, ...)       \
+    BETTER_ENUMS_ID(BETTER_ENUMS_TRIM_STRINGS(__VA_ARGS__))                    \
+                                                                               \
+    constexpr const char * const    _the_name_array[] =                        \
+        { BETTER_ENUMS_ID(BETTER_ENUMS_REFER_TO_STRINGS(__VA_ARGS__)) };       \
+                                                                               \
+    constexpr const char * const * _name_array()                               \
+    {                                                                          \
+        return _the_name_array;                                                \
+    }                                                                          \
+                                                                               \
+    constexpr const char * const * _raw_names()                                \
+    {                                                                          \
+        return _the_name_array;                                                \
+    }
+
+// C++98, C++11 fast version
+#define BETTER_ENUMS_NO_CONSTEXPR_TO_STRING_KEYWORD
+
+// C++11 slow all-constexpr version
+#define BETTER_ENUMS_CONSTEXPR_TO_STRING_KEYWORD                               \
+    constexpr
+
+// C++98, C++11 fast version
+#define BETTER_ENUMS_DO_DECLARE_INITIALIZE                                     \
+    static int initialize();
+
+// C++11 slow all-constexpr version
+#define BETTER_ENUMS_DECLARE_EMPTY_INITIALIZE                                  \
+    static int initialize() { return 0; }
+
+// C++98, C++11 fast version
+#define BETTER_ENUMS_DO_DEFINE_INITIALIZE(Enum)                                \
+    inline int Enum::initialize()                                              \
+    {                                                                          \
+        if (BETTER_ENUMS_NS(Enum)::_initialized())                             \
+            return 0;                                                          \
+                                                                               \
+        ::better_enums::_trim_names(BETTER_ENUMS_NS(Enum)::_raw_names(),       \
+                                    BETTER_ENUMS_NS(Enum)::_name_array(),      \
+                                    BETTER_ENUMS_NS(Enum)::_name_storage(),    \
+                                    _size());                                  \
+                                                                               \
+        BETTER_ENUMS_NS(Enum)::_initialized() = true;                          \
+                                                                               \
+        return 0;                                                              \
+    }
+
+// C++11 slow all-constexpr version
+#define BETTER_ENUMS_DO_NOT_DEFINE_INITIALIZE(Enum)
+
+// C++98, C++11 fast version
+#define BETTER_ENUMS_DO_CALL_INITIALIZE(value)                                 \
+    ::better_enums::continue_with(initialize(), value)
+
+// C++11 slow all-constexpr version
+#define BETTER_ENUMS_DO_NOT_CALL_INITIALIZE(value)                             \
+    value
+
+
+
+// User feature selection.
+
+#ifdef BETTER_ENUMS_STRICT_CONVERSION
+#   define BETTER_ENUMS_DEFAULT_SWITCH_TYPE                                    \
+        BETTER_ENUMS_ENUM_CLASS_SWITCH_TYPE
+#   define BETTER_ENUMS_DEFAULT_SWITCH_TYPE_GENERATE                           \
+        BETTER_ENUMS_ENUM_CLASS_SWITCH_TYPE_GENERATE
+#else
+#   define BETTER_ENUMS_DEFAULT_SWITCH_TYPE                                    \
+        BETTER_ENUMS_REGULAR_ENUM_SWITCH_TYPE
+#   define BETTER_ENUMS_DEFAULT_SWITCH_TYPE_GENERATE                           \
+        BETTER_ENUMS_REGULAR_ENUM_SWITCH_TYPE_GENERATE
+#endif
+
+
+
+#ifndef BETTER_ENUMS_DEFAULT_CONSTRUCTOR
+#   define BETTER_ENUMS_DEFAULT_CONSTRUCTOR(Enum)                              \
+      private:                                                                 \
+        Enum() : _value(0) { }
+#endif
+
+
+
+#ifdef BETTER_ENUMS_HAVE_CONSTEXPR
+
+#ifdef BETTER_ENUMS_CONSTEXPR_TO_STRING
+#   define BETTER_ENUMS_DEFAULT_TRIM_STRINGS_ARRAYS                            \
+        BETTER_ENUMS_CXX11_FULL_CONSTEXPR_TRIM_STRINGS_ARRAYS
+#   define BETTER_ENUMS_DEFAULT_TO_STRING_KEYWORD                              \
+        BETTER_ENUMS_CONSTEXPR_TO_STRING_KEYWORD
+#   define BETTER_ENUMS_DEFAULT_DECLARE_INITIALIZE                             \
+        BETTER_ENUMS_DECLARE_EMPTY_INITIALIZE
+#   define BETTER_ENUMS_DEFAULT_DEFINE_INITIALIZE                              \
+        BETTER_ENUMS_DO_NOT_DEFINE_INITIALIZE
+#   define BETTER_ENUMS_DEFAULT_CALL_INITIALIZE                                \
+        BETTER_ENUMS_DO_NOT_CALL_INITIALIZE
+#else
+#   define BETTER_ENUMS_DEFAULT_TRIM_STRINGS_ARRAYS                            \
+        BETTER_ENUMS_CXX11_PARTIAL_CONSTEXPR_TRIM_STRINGS_ARRAYS
+#   define BETTER_ENUMS_DEFAULT_TO_STRING_KEYWORD                              \
+        BETTER_ENUMS_NO_CONSTEXPR_TO_STRING_KEYWORD
+#   define BETTER_ENUMS_DEFAULT_DECLARE_INITIALIZE                             \
+        BETTER_ENUMS_DO_DECLARE_INITIALIZE
+#   define BETTER_ENUMS_DEFAULT_DEFINE_INITIALIZE                              \
+        BETTER_ENUMS_DO_DEFINE_INITIALIZE
+#   define BETTER_ENUMS_DEFAULT_CALL_INITIALIZE                                \
+        BETTER_ENUMS_DO_CALL_INITIALIZE
+#endif
+
+
+
+// Top-level macros.
+
+#define BETTER_ENUM(Enum, Underlying, ...)                                     \
+    BETTER_ENUMS_ID(BETTER_ENUMS_TYPE(                                         \
+        BETTER_ENUMS_CXX11_UNDERLYING_TYPE,                                    \
+        BETTER_ENUMS_DEFAULT_SWITCH_TYPE,                                      \
+        BETTER_ENUMS_DEFAULT_SWITCH_TYPE_GENERATE,                             \
+        BETTER_ENUMS_DEFAULT_TRIM_STRINGS_ARRAYS,                              \
+        BETTER_ENUMS_DEFAULT_TO_STRING_KEYWORD,                                \
+        BETTER_ENUMS_DEFAULT_DECLARE_INITIALIZE,                               \
+        BETTER_ENUMS_DEFAULT_DEFINE_INITIALIZE,                                \
+        BETTER_ENUMS_DEFAULT_CALL_INITIALIZE,                                  \
+        Enum, Underlying, __VA_ARGS__))
+
+#define SLOW_ENUM(Enum, Underlying, ...)                                       \
+    BETTER_ENUMS_ID(BETTER_ENUMS_TYPE(                                         \
+        BETTER_ENUMS_CXX11_UNDERLYING_TYPE,                                    \
+        BETTER_ENUMS_DEFAULT_SWITCH_TYPE,                                      \
+        BETTER_ENUMS_DEFAULT_SWITCH_TYPE_GENERATE,                             \
+        BETTER_ENUMS_CXX11_FULL_CONSTEXPR_TRIM_STRINGS_ARRAYS,                 \
+        BETTER_ENUMS_CONSTEXPR_TO_STRING_KEYWORD,                              \
+        BETTER_ENUMS_DECLARE_EMPTY_INITIALIZE,                                 \
+        BETTER_ENUMS_DO_NOT_DEFINE_INITIALIZE,                                 \
+        BETTER_ENUMS_DO_NOT_CALL_INITIALIZE,                                   \
+        Enum, Underlying, __VA_ARGS__))
+
+#else
+
+#define BETTER_ENUM(Enum, Underlying, ...)                                     \
+    BETTER_ENUMS_ID(BETTER_ENUMS_TYPE(                                         \
+        BETTER_ENUMS_LEGACY_UNDERLYING_TYPE,                                   \
+        BETTER_ENUMS_DEFAULT_SWITCH_TYPE,                                      \
+        BETTER_ENUMS_DEFAULT_SWITCH_TYPE_GENERATE,                             \
+        BETTER_ENUMS_CXX98_TRIM_STRINGS_ARRAYS,                                \
+        BETTER_ENUMS_NO_CONSTEXPR_TO_STRING_KEYWORD,                           \
+        BETTER_ENUMS_DO_DECLARE_INITIALIZE,                                    \
+        BETTER_ENUMS_DO_DEFINE_INITIALIZE,                                     \
+        BETTER_ENUMS_DO_CALL_INITIALIZE,                                       \
+        Enum, Underlying, __VA_ARGS__))
+
+#endif
+
+
+
+namespace better_enums {
+
+// Maps.
+
+template <typename T>
+struct map_compare {
+    BETTER_ENUMS_CONSTEXPR_ static bool less(const T& a, const T& b)
+        { return a < b; }
+};
+
+template <>
+struct map_compare<const char*> {
+    BETTER_ENUMS_CONSTEXPR_ static bool less(const char *a, const char *b)
+        { return less_loop(a, b); }
+
+  private:
+    BETTER_ENUMS_CONSTEXPR_ static bool
+    less_loop(const char *a, const char *b, size_t index = 0)
+    {
+        return
+            a[index] != b[index] ? a[index] < b[index] :
+            a[index] == '\0' ? false :
+            less_loop(a, b, index + 1);
+    }
+};
+
+template <>
+struct map_compare<const wchar_t*> {
+    BETTER_ENUMS_CONSTEXPR_ static bool less(const wchar_t *a, const wchar_t *b)
+        { return less_loop(a, b); }
+
+  private:
+    BETTER_ENUMS_CONSTEXPR_ static bool
+    less_loop(const wchar_t *a, const wchar_t *b, size_t index = 0)
+    {
+        return
+            a[index] != b[index] ? a[index] < b[index] :
+            a[index] == L'\0' ? false :
+            less_loop(a, b, index + 1);
+    }
+};
+
+template <typename Enum, typename T, typename Compare = map_compare<T> >
+struct map {
+    typedef T (*function)(Enum);
+
+    BETTER_ENUMS_CONSTEXPR_ explicit map(function f) : _f(f) { }
+
+    BETTER_ENUMS_CONSTEXPR_ T from_enum(Enum value) const { return _f(value); }
+    BETTER_ENUMS_CONSTEXPR_ T operator [](Enum value) const
+        { return _f(value); }
+
+    BETTER_ENUMS_CONSTEXPR_ Enum to_enum(T value) const
+    {
+        return
+            _or_throw(to_enum_nothrow(value), "map::to_enum: invalid argument");
+    }
+
+    BETTER_ENUMS_CONSTEXPR_ optional<Enum>
+    to_enum_nothrow(T value, size_t index = 0) const
+    {
+        return
+            index >= Enum::_size() ? optional<Enum>() :
+            Compare::less(_f(Enum::_values()[index]), value) ||
+            Compare::less(value, _f(Enum::_values()[index])) ?
+                to_enum_nothrow(value, index + 1) :
+            Enum::_values()[index];
+    }
+
+  private:
+    const function      _f;
+};
+
+template <typename Enum, typename T>
+BETTER_ENUMS_CONSTEXPR_ map<Enum, T> make_map(T (*f)(Enum))
+{
+    return map<Enum, T>(f);
+}
+
+}
+
+#define BETTER_ENUMS_DECLARE_STD_HASH(type)                                    \
+	namespace std {                                                            \
+    template <> struct hash<type>                                              \
+    {                                                                          \
+        size_t operator()(const type &x) const                                 \
+        {                                                                      \
+            return std::hash<size_t>()(x._to_integral());                      \
+        }                                                                      \
+    };                                                                         \
+	}
+
+#endif // #ifndef BETTER_ENUMS_ENUM_H
