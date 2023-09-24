@@ -1,7 +1,7 @@
 
 
 #include <fstream>
-#include <Typestate_Library\TypestateLibrary.h>
+#include "TypestateLibrary.h"
 
 
 using TypestateLibrary::TypestateClassConnector;
