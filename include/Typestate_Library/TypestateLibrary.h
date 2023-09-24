@@ -2,7 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <better_enums/better_enums.hpp>
+#include "enum.h"
 
 #include <functional>
 #include <map>
