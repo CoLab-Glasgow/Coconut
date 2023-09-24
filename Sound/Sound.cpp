@@ -2,11 +2,10 @@
 //  main.cpp
 //  Light
 //
-//  Created by Arwa Alsubhi on 29/11/2021.
-//
+//  Created by Arwa Alsubhi 
 
 
-#include <Typestate_Library\TypestateLibrary.h>
+#include "TypestateLibrary.h"
 
 using TypestateLibrary::TypestateClassConnector;
 using TypestateLibrary::State;
