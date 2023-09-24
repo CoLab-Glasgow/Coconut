@@ -4,14 +4,14 @@
  * File:   main.cpp
  * Author: arwaalsubhi
  *
- * Created on 12 October 2021, 16:19
+ * 
  */
 
 
 #include <cstdlib>
 #include<iostream>
 #include<string>
-#include <Typestate_Library\TypestateLibrary.h>
+#include "TypestateLibrary.h"
 
 using TypestateLibrary::TypestateClassConnector;
 using TypestateLibrary::State;
