@@ -1,5 +1,5 @@
 #include "Bank.h"
-#include "Coconut/TypestateLibrary.h"
+#include "TypestateLibrary.h"
 #include <iostream>
 
 using TypestateLibrary::TypestateClassConnector;
