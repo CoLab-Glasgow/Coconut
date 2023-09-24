@@ -301,7 +301,7 @@ namespace TypestateLibrary {
 
    
     template <typename T, typename  Typestate_Template>
-    class TypestateClassConnector<T, Typestate_Template> : public T, public Tracked<T, Typestate_Template> {
+    class TypestateClassConnector<T, Typestate_Template> : public Tracked<T, Typestate_Template> {
 
 
 
@@ -507,7 +507,7 @@ namespace TypestateLibrary {
     class Subtyping_Checker : public T {};
 
     template <typename T, typename   Merged_Typestate>
-    class Subtyping_Checker<T, Merged_Typestate> : public T, public TrackedForSubtyping<T, Merged_Typestate> {
+    class Subtyping_Checker<T, Merged_Typestate> :  public TrackedForSubtyping<T, Merged_Typestate> {
 
 
     private:
