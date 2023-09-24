@@ -3,7 +3,7 @@
 #include <vector>
 #include <algorithm>
 #include <string>
-#include <Typestate_Library\TypestateLibrary.h>
+#include "TypestateLibrary.h"
 
 using TypestateLibrary::TypestateClassConnector;
 using TypestateLibrary::State;
