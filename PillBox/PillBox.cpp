@@ -4,7 +4,7 @@
 #include <chrono>
 #include <thread>
 #include <vector>
-#include <Typestate_Library\TypestateLibrary.h>
+#include "TypestateLibrary.h"
 
 using TypestateLibrary::TypestateClassConnector;
 using TypestateLibrary::State;
