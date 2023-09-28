@@ -1,9 +1,9 @@
 #include "Vehicle.h"
 
-class Car : public Vehicle {
+class Car : public vehicle {
 
 	std::string name;
-	std::string color;
+	
 	long speed;
 
 public:
