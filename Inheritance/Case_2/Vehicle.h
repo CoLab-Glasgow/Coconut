@@ -1,12 +1,18 @@
+  
+
 
 #ifndef Vehicle_HEADER
 #define Vehicle_HEADER
 
+#include "TypestateLibrary.h"
 
 
 
-#include <iostream>
-// case 2 A class without typestate inherits from a class with typestate. 
+using TypestateLibrary::TypestateClassConnector;
+using TypestateLibrary::State;
+using TypestateLibrary::Typestate_Template;
+
+// case 2: a class without typestate inherits from a class with typestate. 
 
 class Vehicle
 {
@@ -29,6 +35,27 @@ public:
 
 
 };
+
+
+
+BETTER_ENUM (VehicleStates , int , 
+	IDEL,
+	START,
+	MOVEING,
+	STOP
+)
+
+using Vehicle_Typestate = Typestate_Template<
+
+	State<VehicleStates::IDEL, &Vehicle::Start, VehicleStates::START>,
+	State<VehicleStates::START, &Vehicle::Set_Speed, VehicleStates::MOVEING>,
+	State<VehicleStates::MOVEING, &Vehicle::Set_Speed, VehicleStates::MOVEING>,
+	State<VehicleStates::MOVEING, &Vehicle::Stop, VehicleStates::STOP>
+
+>;
+
+
+using vehicle = TypestateClassConnector<Vehicle, Vehicle_Typestate>;
 
 
 #endif
