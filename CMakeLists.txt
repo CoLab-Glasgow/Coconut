@@ -22,7 +22,7 @@ add_executable(Client4 Sound/Sound.cpp)
 add_executable(Client5 Student/Student.cpp)
 add_executable(Client6 Basket/Basket.cpp)
 add_executable(Client7 Inheritance/Case_1/main.cpp)
-
+add_executable(Client8 Inheritance/Case_2/main.cpp)
 
 
 target_include_directories(Client1 PRIVATE  Boost )
