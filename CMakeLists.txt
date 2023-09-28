@@ -31,6 +31,7 @@ target_include_directories(Client3 PRIVATE  Boost)
 target_include_directories(Client4 PRIVATE  Boost)
 target_include_directories(Client5 PRIVATE  Boost)
 target_include_directories(Client6 PRIVATE  Boost)
+target_include_directories(Client8 PRIVATE  Boost)
 
 target_include_directories(Client1 PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/include/Typestate_Library/ ${CMAKE_CURRENT_SOURCE_DIR}/external/)
 target_include_directories(Client2 PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/include/Typestate_Library/ ${CMAKE_CURRENT_SOURCE_DIR}/external/)
@@ -38,6 +39,8 @@ target_include_directories(Client3 PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/include/
 target_include_directories(Client4 PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/include/Typestate_Library/ ${CMAKE_CURRENT_SOURCE_DIR}/external/)
 target_include_directories(Client5 PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/include/Typestate_Library/ ${CMAKE_CURRENT_SOURCE_DIR}/external/)
 target_include_directories(Client6 PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/include/Typestate_Library/${CMAKE_CURRENT_SOURCE_DIR}/external/)
+target_include_directories(Client8 PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/include/include/Typestate_Library/  ${CMAKE_CURRENT_SOURCE_DIR}/external/)
+
 
 
 
