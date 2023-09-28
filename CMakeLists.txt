@@ -21,7 +21,7 @@ add_executable(Client3 BankAccount_Example/BankAccount.cpp)
 add_executable(Client4 Sound/Sound.cpp)
 add_executable(Client5 Student/Student.cpp)
 add_executable(Client6 Basket/Basket.cpp)
-
+add_executable(Client7 Inheritance/Case_1/main.cpp)
 
 
 
