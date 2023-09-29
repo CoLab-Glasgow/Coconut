@@ -50,27 +50,6 @@ private:
 
 
 
-class RedLed {
-
-public:
-
-    void Switch_ON(Drawer* d) {
-        std::cout << "It's time to take the" <<d->get_pill_name();
-    }
-    void Switch_OFF(Drawer* d) {
-        std::cout << "Drawer that has the pill " << d->get_pill_name() << " is now Closed!"
-            << std::endl;
-    }
-    void Blink(Drawer* d) {
-        std::cout << "Drawer that has the pill " << d->get_pill_name() << " is now Open!"
-            << std::endl;
-    }
-
-
-
-};
-
-
 
 BETTER_ENUM(domain, int,
     Idle, Active, NonActive, Pill_Time_On, RedLedON, RedLedOFF, RedLedBlinkinning)
@@ -86,37 +65,4 @@ BETTER_ENUM(domain, int,
     State<domain::Active, &PillBox::Deactivate_Pill_Box, domain::NonActive>
     >;
 
-using Pillbox = TypestateClassConnector<PillBox, PillBox_typestate>;
-using Redled = TypestateClassConnector<RedLed, PillBox_typestate>;
 
-int main() {
-
-
-Drawer drawer1("Panadol", 3, 50);
-Drawer drawer2("Piriton Antihistamine", 8, 40);
-
-
-int h = 10;
-int min = 30;
-
-
-Pillbox pillbox1 , pillbox2;
-Redled redled;
-
-(pillbox1->* &PillBox::addDrawers)(&drawer1);
-(pillbox2->* &PillBox::addDrawers)(&drawer2);
-Drawer* d = (pillbox1->* & PillBox::Process_System_Time)();
-(pillbox1->* & PillBox::Activate_pillBox)();
-   
-(redled->*&RedLed::Switch_ON)(std::move(d));
-(redled->*&RedLed::Blink)(std::move(d));
-(redled->*&RedLed::Switch_OFF)(std::move(d));
-
-
-
-
-
-
-    return 0;
-
-}
