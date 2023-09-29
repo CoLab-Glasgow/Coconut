@@ -1,10 +1,10 @@
 
-#include <iostream>
-#include <string>
-#include <chrono>
-#include <thread>
-#include <vector>
+
+
+
 #include "TypestateLibrary.h"
+#include "Drawer.h"
+#include "RedLed.h"
 
 using TypestateLibrary::TypestateClassConnector;
 using TypestateLibrary::State;
@@ -12,57 +12,71 @@ using TypestateLibrary::Typestate_Template;
 
 
 
-
 class PillBox {
+
 public:
     PillBox() {
         DrawersBox = new std::vector<Drawer*>();
     }
-
-    ~PillBox() {
-        delete DrawersBox;
-    }
-
     void Activate_pillBox() {
         std::cout << "PillBox is active now!" << std::endl;
     }
-
     void addDrawers(Drawer* d) {
         DrawersBox->push_back(d);
     }
-
     Drawer* Process_System_Time() {
         int h = 3;
         int m = 50;
         for (Drawer* d : *DrawersBox) {
-            if (h == d->get_the_hour() && m == d->get_minutes()) {
+            if (h == d->get_the_hour() && m == d->get_minutes())
+            {
                 return d;
             }
         }
-        return nullptr; // Return nullptr if no matching drawer is found
+        return nullptr;
     }
     void Deactivate_Pill_Box() {
         // Deactivate the pill box
     }
+    void Switch_ON(Drawer* d) {
+        Switch_ON(d);
+        redled.setRedLed("ON");
+        std::cout << "It's time to take the " << d->get_pill_name();
+        
+    }
+    void Switch_OFF(Drawer* d) {
+        redled.setRedLed("OFF");
+        std::cout << "Drawer that has the pill" << d->get_pill_name() << "is now Closed!";
+    }
+    void Blink(Drawer* d) {
+        redled.setRedLed("Blinking");
+        std::cout << "Drawer that has the pill" << d->get_pill_name() << "is now Open!";
+    }
 private:
     std::vector<Drawer*>* DrawersBox;
+    RedLed redled;
 };
 
 
 
 
+
+
 BETTER_ENUM(domain, int,
-    Idle, Active, NonActive, Pill_Time_On, RedLedON, RedLedOFF, RedLedBlinkinning)
+    Idle, Active, NonActive, Pill_Time_On, RedLedON, RedLedOFF, RedLedBlinking);
 
 
     using PillBox_typestate = Typestate_Template<
-    State<domain::Idle, &PillBox::Activate_pillBox, domain::Active>,
-    State<domain::Active, &PillBox::Process_System_Time, domain::Pill_Time_On>,
-    State<domain::Pill_Time_On, &RedLed::Switch_ON, domain::RedLedON>,
-    State<domain::RedLedON, &RedLed::Switch_ON, domain::RedLedON>,
-    State<domain::RedLedON, &RedLed::Blink, domain::RedLedBlinkinning>,
-    State<domain::RedLedBlinkinning, &RedLed::Switch_OFF, domain::RedLedOFF>,
-    State<domain::Active, &PillBox::Deactivate_Pill_Box, domain::NonActive>
+    State<domain::Idle,&PillBox::Activate_pillBox,domain::Active>,
+    State<domain::Active,&PillBox::Process_System_Time,domain::Pill_Time_On>,
+    State<domain::Pill_Time_On,&PillBox::Switch_ON,domain::RedLedON>,
+    State<domain::RedLedON,&PillBox::Switch_ON,domain::RedLedON>,
+    State<domain::RedLedON,&PillBox::Blink,domain::RedLedBlinking>,
+    State<domain::RedLedBlinking,&PillBox::Switch_OFF,domain::RedLedOFF>,
+    State<domain::Active,&PillBox::Deactivate_Pill_Box,domain::NonActive>
     >;
+
+using Pillbox = TypestateClassConnector<PillBox, PillBox_typestate>;
+
 
 
