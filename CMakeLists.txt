@@ -15,7 +15,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
 # Add executable targets for each client
-add_executable(Client1 PillBox/PillBox.cpp)
+add_executable(Client1 PillBox/main.cpp)
 add_executable(Client2 File_example/File.cpp)
 add_executable(Client3 BankAccount_Example/BankAccount.cpp)
 add_executable(Client4 Sound/Sound.cpp)
