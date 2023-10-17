@@ -41,8 +41,10 @@ target_include_directories(Client2 PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/include/
 target_include_directories(Client3 PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/include/Typestate_Library/ ${CMAKE_CURRENT_SOURCE_DIR}/external/)
 target_include_directories(Client4 PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/include/Typestate_Library/ ${CMAKE_CURRENT_SOURCE_DIR}/external/)
 target_include_directories(Client5 PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/include/Typestate_Library/ ${CMAKE_CURRENT_SOURCE_DIR}/external/)
-target_include_directories(Client6 PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/include/Typestate_Library/${CMAKE_CURRENT_SOURCE_DIR}/external/)
-target_include_directories(Client8 PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/include/include/Typestate_Library/  ${CMAKE_CURRENT_SOURCE_DIR}/external/)
+target_include_directories(Client6 PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/include/Typestate_Library/ ${CMAKE_CURRENT_SOURCE_DIR}/external/)
+target_include_directories(Client8 PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/include/include/Typestate_Library/ ${CMAKE_CURRENT_SOURCE_DIR}/external/)
+target_include_directories(Client9 PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/include/include/Typestate_Library/ ${CMAKE_CURRENT_SOURCE_DIR}/external/)
+target_include_directories(Client10 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include/include/Typestate_Library/ ${CMAKE_CURRENT_SOURCE_DIR}/external/)
 
 
 
