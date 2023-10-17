@@ -4,9 +4,6 @@ using TypestateLibrary::TypestateClassConnector;
 using TypestateLibrary::State;
 using TypestateLibrary::Typestate_Template;
 
-
-
-
 class Sound {
 public:
     Sound() = default;
@@ -33,6 +30,7 @@ enum  StatesOfSound {
     HIGH,
     LOW,
 };
+
 using Sound_protocol = Typestate_Template<
     State<StatesOfSound::OFF, &Sound::TurnON, StatesOfSound::ON>,
     State<StatesOfSound::ON, &Sound::turnHigh, StatesOfSound::HIGH>,
@@ -44,4 +42,5 @@ using Sound_protocol = Typestate_Template<
     State<StatesOfSound::HIGH, &Sound::TurnOff, StatesOfSound::OFF>
 
 >;
+
 using sound = TypestateClassConnector<Sound, Sound_protocol>;
