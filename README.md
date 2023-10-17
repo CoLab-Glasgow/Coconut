@@ -17,9 +17,9 @@ git clone https://github.com/CoLab-Glasgow/Coconut.git
 ```
 ### Dependencies ###
 
-- Boost library Version 1.82.0
+- Boost library Version 1.81.0
 ``` 
-git clone --branch boost-1.82.0 --depth 1 https://github.com/boostorg/boost.git
+git clone --branch boost-1.81.0 --depth 1 https://github.com/boostorg/boost.git
 
 ``` 
 ### Build the Coconut Library ##
