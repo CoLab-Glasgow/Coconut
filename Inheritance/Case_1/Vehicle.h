@@ -1,13 +1,7 @@
-
+#include <iostream>
 #ifndef Vehicle_HEADER
 #define Vehicle_HEADER
-
-
-
-
-#include <iostream>
 // case 1 A class without typestate inherits from a class with typestate. 
-
 class Vehicle
 {
 	long speed;
@@ -24,11 +18,6 @@ public:
 
 	void Stop() {
 		std::cout << "Vehicle Stopped !";
-
 	}
-
-
 };
-
-
 #endif
