@@ -4,9 +4,7 @@
 using TypestateLibrary::TypestateClassConnector;
 using TypestateLibrary::State;
 using TypestateLibrary::Typestate_Template;
-
 // case 2: a class without typestate inherits from a class with typestate. 
-
 class Vehicle
 {
 	long speed;
@@ -18,8 +16,7 @@ public:
 		std::cout << "Vehicle speed is: " << s << std::endl;;
 		this->speed = s;
 	}
-
-	void Stop() {
+        void Stop() {
 		std::cout << "Vehicle Stopped !";
 	}
 };
