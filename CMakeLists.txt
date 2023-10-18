@@ -1,20 +1,13 @@
 cmake_minimum_required(VERSION 3.16.3)
-
 project(COCONUT)
 #Set C++ standard to C++20
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 # Boost setup
 set(Boost_ROOT "C:/Program Files/boost_1_81_0") # put the right path to your boost file 
 find_package(Boost REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
-
-
-# Add the project's include directory
-include_directories(${CMAKE_SOURCE_DIR}/include)
-
-# Add executable targets for each client
+# Add executable targets for each example
 add_executable(Client1 PillBox/main.cpp)
 add_executable(Client2 File_example/main.cpp)
 add_executable(Client3 BankAccount_Example/main.cpp)
