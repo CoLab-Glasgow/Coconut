@@ -1,11 +1,9 @@
 #include "Vehicle.h"
 
 class Car : public Vehicle {
-
 	std::string name;
 	std::string color;
 	long speed;
-
 public:
 	void  Play_Music(){
 		std::cout << "Music is On! " << std::endl;
