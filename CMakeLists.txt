@@ -25,7 +25,7 @@ add_executable(Client7 Inheritance/Case_1/main.cpp)
 add_executable(Client8 Inheritance/Case_2/main.cpp)
 add_executable(Client9 Inheritance/Case_3/main.cpp)
 add_executable(Client10 Inheritance/Case_4/main.cpp)
-
+# Include Boost for all executable targets
 target_include_directories(Client1 PRIVATE Boost)
 target_include_directories(Client2 PRIVATE Boost)
 target_include_directories(Client3 PRIVATE Boost)
@@ -35,7 +35,7 @@ target_include_directories(Client6 PRIVATE Boost)
 target_include_directories(Client8 PRIVATE Boost)
 target_include_directories(Client9 PRIVATE Boost)
 target_include_directories(Client10 PRIVATE Boost)
-
+# Include TypestateLibrary.h for all executable targets
 target_include_directories(Client1 PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/include/Typestate_Library/ ${CMAKE_CURRENT_SOURCE_DIR}/external/)
 target_include_directories(Client2 PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/include/Typestate_Library/ ${CMAKE_CURRENT_SOURCE_DIR}/external/)
 target_include_directories(Client3 PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/include/Typestate_Library/ ${CMAKE_CURRENT_SOURCE_DIR}/external/)
@@ -45,8 +45,3 @@ target_include_directories(Client6 PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/include/
 target_include_directories(Client8 PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/include/include/Typestate_Library/ ${CMAKE_CURRENT_SOURCE_DIR}/external/)
 target_include_directories(Client9 PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/include/include/Typestate_Library/ ${CMAKE_CURRENT_SOURCE_DIR}/external/)
 target_include_directories(Client10 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include/include/Typestate_Library/ ${CMAKE_CURRENT_SOURCE_DIR}/external/)
-
-
-
-
-
