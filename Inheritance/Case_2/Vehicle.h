@@ -1,13 +1,6 @@
-  
-
-
 #ifndef Vehicle_HEADER
 #define Vehicle_HEADER
-
 #include "TypestateLibrary.h"
-
-
-
 using TypestateLibrary::TypestateClassConnector;
 using TypestateLibrary::State;
 using TypestateLibrary::Typestate_Template;
@@ -17,9 +10,7 @@ using TypestateLibrary::Typestate_Template;
 class Vehicle
 {
 	long speed;
-
 public:
-
 	void Start() {
 		std::cout << "Starting the Vehicle" << std::endl;
 	}
@@ -30,12 +21,8 @@ public:
 
 	void Stop() {
 		std::cout << "Vehicle Stopped !";
-
 	}
-
-
 };
-
 
 
 BETTER_ENUM (VehicleStates , int , 
@@ -46,16 +33,9 @@ BETTER_ENUM (VehicleStates , int ,
 )
 
 using Vehicle_Typestate = Typestate_Template<
-
-	State<VehicleStates::IDEL, &Vehicle::Start, VehicleStates::START>,
+         State<VehicleStates::IDEL, &Vehicle::Start, VehicleStates::START>,
 	State<VehicleStates::START, &Vehicle::Set_Speed, VehicleStates::MOVEING>,
 	State<VehicleStates::MOVEING, &Vehicle::Set_Speed, VehicleStates::MOVEING>,
-	State<VehicleStates::MOVEING, &Vehicle::Stop, VehicleStates::STOP>
-
->;
-
-
+	State<VehicleStates::MOVEING, &Vehicle::Stop, VehicleStates::STOP>>;
 using vehicle = TypestateClassConnector<Vehicle, Vehicle_Typestate>;
-
-
 #endif
