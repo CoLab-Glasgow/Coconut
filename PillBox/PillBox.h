@@ -6,8 +6,6 @@ using TypestateLibrary::TypestateClassConnector;
 using TypestateLibrary::State;
 using TypestateLibrary::Typestate_Template;
 
-
-
 class PillBox {
 public:
     PillBox() {
@@ -55,7 +53,6 @@ private:
 
 BETTER_ENUM(domain, int,
     Idle, Active, NonActive, Pill_Time_On, RedLedON, RedLedOFF, RedLedBlinking);
-
 
     using PillBox_typestate = Typestate_Template<
     State<domain::Idle,&PillBox::Activate_pillBox,domain::Active>,
