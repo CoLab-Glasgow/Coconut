@@ -2,7 +2,6 @@
 
 class Drawer {
 public:
-
     Drawer(std::string pillName, int hour, int minute)
         : pillName_(pillName), hour_(hour), minute_(minute) {}
 
@@ -13,7 +12,6 @@ public:
     }
     int get_the_hour()
     {
-
         return this->hour_;
     }
     int get_minutes() {
@@ -23,6 +21,4 @@ private:
     std::string pillName_;
     int hour_;
     int minute_;
-
-
 };
