@@ -1,7 +1,3 @@
-
-
-
-
 #include "TypestateLibrary.h"
 #include "Drawer.h"
 #include "RedLed.h"
@@ -13,7 +9,6 @@ using TypestateLibrary::Typestate_Template;
 
 
 class PillBox {
-
 public:
     PillBox() {
         DrawersBox = new std::vector<Drawer*>();
@@ -24,9 +19,7 @@ public:
     void addDrawers(Drawer* d) {
         DrawersBox->push_back(d);
     }
-    Drawer* Process_System_Time() {
-        int h = 3;
-        int m = 50;
+    Drawer* Process_System_Time(int h, int m) {
         for (Drawer* d : *DrawersBox) {
             if (h == d->get_the_hour() && m == d->get_minutes())
             {
@@ -38,11 +31,14 @@ public:
     void Deactivate_Pill_Box() {
         // Deactivate the pill box
     }
-    void Switch_ON(Drawer* d) {
-        Switch_ON(d);
-        redled.setRedLed("ON");
-        std::cout << "It's time to take the " << d->get_pill_name();
-        
+    void Switch_ON(Drawer* d, int timesCalled = 0) {
+        if(d != nullptr && timesCalled < 5) {
+            redled.setRedLed("ON");
+            std::cout << "It's time to take " << d->get_pill_name()<< std::endl;
+
+            // Recursive call with the Drawer object
+            Switch_ON(d, timesCalled + 1);
+        }
     }
     void Switch_OFF(Drawer* d) {
         redled.setRedLed("OFF");
@@ -56,11 +52,6 @@ private:
     std::vector<Drawer*>* DrawersBox;
     RedLed redled;
 };
-
-
-
-
-
 
 BETTER_ENUM(domain, int,
     Idle, Active, NonActive, Pill_Time_On, RedLedON, RedLedOFF, RedLedBlinking);
@@ -77,6 +68,3 @@ BETTER_ENUM(domain, int,
     >;
 
 using Pillbox = TypestateClassConnector<PillBox, PillBox_typestate>;
-
-
-
