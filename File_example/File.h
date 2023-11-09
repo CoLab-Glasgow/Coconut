@@ -3,15 +3,11 @@
 using TypestateLibrary::TypestateClassConnector;
 using TypestateLibrary::State;
 using TypestateLibrary::Typestate_Template;
-
-
 // file class with all methods to handle file objects 
-class File {
-    
+class File {   
     std::string myfileName;
     std::ifstream file;
     std::string fileText;
-
 public:
     File() { }
     void OpenFile() {
@@ -21,7 +17,6 @@ public:
         if (getline(file, fileText)) std::cout << fileText;
     }
     void ReadNext() {
-
         if (getline(file, fileText)) std::cout << fileText;
     }
     void Close() {
@@ -42,6 +37,5 @@ using File_protocol = Typestate_Template<
     State<FileState::READ, &File::ReadNext, FileState::READ>,
     State<FileState::READ,  &File::Close, FileState::CLOSE>
 >;
-
 
 using File_example = TypestateClassConnector<File, File_protocol>;
