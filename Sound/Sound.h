@@ -1,4 +1,3 @@
-
 #include "TypestateLibrary.h"
 using TypestateLibrary::TypestateClassConnector;
 using TypestateLibrary::State;
@@ -7,7 +6,6 @@ using TypestateLibrary::Typestate_Template;
 class Sound {
 public:
     Sound() = default;
-
     void TurnON() {
         std::cout << "Sound is On" << std::endl;
     }
@@ -20,8 +18,6 @@ public:
     void turnLow() {
         std::cout << "Sound is Low" << std::endl;
     }
-
-
 };
 
 enum  StatesOfSound {
