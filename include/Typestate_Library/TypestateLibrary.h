@@ -46,25 +46,18 @@ using namespace hana::literals;
 
 namespace TypestateLibrary {
 
-    struct func_info_t {
-        const char* name;
-    };
-
     template<auto state, auto FP, auto NextState>
     struct State {
-
         constexpr auto GetvalueState() {
             constexpr auto valueState = state;
             return valueState;
 
         }
 
-
         constexpr auto GetvalueFP() {
             constexpr auto valueFP = FP;
             return valueFP;
         }
-
 
         constexpr auto GetvalueNextState() {
             constexpr auto valueNextState = NextState;
