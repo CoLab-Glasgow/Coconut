@@ -32,10 +32,10 @@ BETTER_ENUM (Studentstate, int,
 
 
 using StudentProtocol = Typestate_Template<
-    State<Studentstate::UNAPPROVED, &Student::Register, Studentstate::APPROVED>,
-    State<Studentstate::APPROVED, &Student::Enrol, Studentstate::ENROLLED>,
-    State<Studentstate::ENROLLED, &Student::Enrol, Studentstate::ENROLLED>,
-    State<Studentstate::END, &Student::LogOut, Studentstate::END>
+    State<+Studentstate::UNAPPROVED, &Student::Register, +Studentstate::APPROVED>,
+    State<+Studentstate::APPROVED, &Student::Enrol, +Studentstate::ENROLLED>,
+    State<+Studentstate::ENROLLED, &Student::Enrol, +Studentstate::ENROLLED>,
+    State<+Studentstate::END, &Student::LogOut, +Studentstate::END>
 >;
 
 using student = TypestateClassConnector<Student, StudentProtocol>;
