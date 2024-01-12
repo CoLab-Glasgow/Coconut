@@ -28,15 +28,14 @@ enum  StatesOfSound {
 };
 
 using Sound_protocol = Typestate_Template<
-    State<StatesOfSound::OFF, &Sound::TurnON, StatesOfSound::ON>,
-    State<StatesOfSound::ON, &Sound::turnHigh, StatesOfSound::HIGH>,
-    State<StatesOfSound::ON, &Sound::turnLow, StatesOfSound::LOW>,
-    State<StatesOfSound::ON, &Sound::TurnOff, StatesOfSound::OFF>,
-    State<StatesOfSound::LOW, &Sound::turnHigh, StatesOfSound::HIGH>,
-    State<StatesOfSound::HIGH, &Sound::turnLow, StatesOfSound::LOW>,
-    State<StatesOfSound::LOW, &Sound::TurnOff, StatesOfSound::OFF>,
-    State<StatesOfSound::HIGH, &Sound::TurnOff, StatesOfSound::OFF>
-
+    State<+StatesOfSound::OFF, &Sound::TurnON, +StatesOfSound::ON>,
+    State<+StatesOfSound::ON, &Sound::turnHigh, +StatesOfSound::HIGH>,
+    State<+StatesOfSound::ON, &Sound::turnLow, +StatesOfSound::LOW>,
+    State<+StatesOfSound::ON, &Sound::TurnOff, +StatesOfSound::OFF>,
+    State<+StatesOfSound::LOW, &Sound::turnHigh, +StatesOfSound::HIGH>,
+    State<+StatesOfSound::HIGH, &Sound::turnLow, +StatesOfSound::LOW>,
+    State<+StatesOfSound::LOW, &Sound::TurnOff, +StatesOfSound::OFF>,
+    State<+StatesOfSound::HIGH, &Sound::TurnOff, +StatesOfSound::OFF>
 >;
 
 using sound = TypestateClassConnector<Sound, Sound_protocol>;
