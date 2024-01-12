@@ -53,15 +53,15 @@ private:
 
 BETTER_ENUM(domain, int,
     Idle, Active, NonActive, Pill_Time_On, RedLedON, RedLedOFF, RedLedBlinking);
-
+    
     using PillBox_typestate = Typestate_Template<
-    State<domain::Idle,&PillBox::Activate_pillBox,domain::Active>,
-    State<domain::Active,&PillBox::Process_System_Time,domain::Pill_Time_On>,
-    State<domain::Pill_Time_On,&PillBox::Switch_ON,domain::RedLedON>,
-    State<domain::RedLedON,&PillBox::Switch_ON,domain::RedLedON>,
-    State<domain::RedLedON,&PillBox::Blink,domain::RedLedBlinking>,
-    State<domain::RedLedBlinking,&PillBox::Switch_OFF,domain::RedLedOFF>,
-    State<domain::Active,&PillBox::Deactivate_Pill_Box,domain::NonActive>
+    State<+domain::Idle,&PillBox::Activate_pillBox,+domain::Active>,
+    State<+domain::Active,&PillBox::Process_System_Time,+domain::Pill_Time_On>,
+    State<+domain::Pill_Time_On,&PillBox::Switch_ON,+domain::RedLedON>,
+    State<+domain::RedLedON,&PillBox::Switch_ON,+domain::RedLedON>,
+    State<+domain::RedLedON,&PillBox::Blink,+domain::RedLedBlinking>,
+    State<+domain::RedLedBlinking,&PillBox::Switch_OFF,+domain::RedLedOFF>,
+    State<+domain::Active,&PillBox::Deactivate_Pill_Box,+domain::NonActive>
     >;
 
 using Pillbox = TypestateClassConnector<PillBox, PillBox_typestate>;
