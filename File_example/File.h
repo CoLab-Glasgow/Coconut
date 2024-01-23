@@ -32,10 +32,10 @@ BETTER_ENUM(FileState, int,
     CLOSE)
 
 using File_protocol = Typestate_Template<
-    State<FileState::INIT,  &File::OpenFile, FileState::OPEN>,
-    State<FileState::OPEN, &File::read, FileState::READ>,
-    State<FileState::READ, &File::ReadNext, FileState::READ>,
-    State<FileState::READ,  &File::Close, FileState::CLOSE>
+    State<+FileState::INIT,  &File::OpenFile, +FileState::OPEN>,
+    State<+FileState::OPEN, &File::read, +FileState::READ>,
+    State<+FileState::READ, &File::ReadNext, +FileState::READ>,
+    State<+FileState::READ,  &File::Close, +FileState::CLOSE>
 >;
 
 using File_example = TypestateClassConnector<File, File_protocol>;
