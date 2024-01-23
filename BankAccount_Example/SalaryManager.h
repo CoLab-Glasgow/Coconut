@@ -37,10 +37,10 @@ BETTER_ENUM(BankStates, int, INIT= 0, INTERMEDITE, FILLED, END)
 
 
 using BankProtocol= Typestate_Template<
-    State<BankStates::INIT, &SalaryManager::setMoney, BankStates::INTERMEDITE>,
-    State<BankStates::INIT, &DataStorage::setMoney, BankStates::FILLED>,
-    State<BankStates::INTERMEDITE, &SalaryManager::addSalary, BankStates::FILLED>,
-    State<BankStates::FILLED, &DataStorage::store, BankStates::END>> ;
+    State<+BankStates::INIT, &SalaryManager::setMoney, +BankStates::INTERMEDITE>,
+    State<+BankStates::INIT, &DataStorage::setMoney, +BankStates::FILLED>,
+    State<+BankStates::INTERMEDITE, &SalaryManager::addSalary, +BankStates::FILLED>,
+    State<+BankStates::FILLED, &DataStorage::store, +BankStates::END>> ;
 
 
 using Account = TypestateClassConnector<BankAccount, BankProtocol> ;
