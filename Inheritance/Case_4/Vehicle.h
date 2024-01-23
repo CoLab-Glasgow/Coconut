@@ -28,10 +28,10 @@ public:
 BETTER_ENUM (VehicleStates, int, IDEL, START,  MOVING, STOPPED);
           
 using typestateVehicle = Typestate_Template<
-	State<VehicleStates::IDEL ,&Vehicle::Start ,VehicleStates::START>,
-	State<VehicleStates::START , &Vehicle::Set_speed, VehicleStates::MOVING>,
-	State<VehicleStates::MOVING , &Vehicle::Set_speed ,VehicleStates::MOVING>,
-	State<VehicleStates::MOVING , &Vehicle::Stop, VehicleStates::STOPPED>>;
+	State<+VehicleStates::IDEL ,&Vehicle::Start, +VehicleStates::START>,
+	State<+VehicleStates::START , &Vehicle::Set_speed, +VehicleStates::MOVING>,
+	State<+VehicleStates::MOVING , &Vehicle::Set_speed, +VehicleStates::MOVING>,
+	State<+VehicleStates::MOVING , &Vehicle::Stop, +VehicleStates::STOPPED>>;
 
 #endif
 using vehicle = TypestateClassConnector<Vehicle, typestateVehicle>;
