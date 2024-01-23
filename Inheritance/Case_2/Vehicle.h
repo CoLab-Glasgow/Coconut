@@ -30,9 +30,10 @@ BETTER_ENUM (VehicleStates , int ,
 )
 
 using Vehicle_Typestate = Typestate_Template<
-         State<VehicleStates::IDEL, &Vehicle::Start, VehicleStates::START>,
-	State<VehicleStates::START, &Vehicle::Set_Speed, VehicleStates::MOVEING>,
-	State<VehicleStates::MOVEING, &Vehicle::Set_Speed, VehicleStates::MOVEING>,
-	State<VehicleStates::MOVEING, &Vehicle::Stop, VehicleStates::STOP>>;
+    State<+VehicleStates::IDEL, &Vehicle::Start, +VehicleStates::START>,
+	State<+VehicleStates::START, &Vehicle::Set_Speed, +VehicleStates::MOVEING>,
+	State<+VehicleStates::MOVEING, &Vehicle::Set_Speed, +VehicleStates::MOVEING>,
+	State<+VehicleStates::MOVEING, &Vehicle::Stop, +VehicleStates::STOP>>;
+	
 using vehicle = TypestateClassConnector<Vehicle, Vehicle_Typestate>;
 #endif
