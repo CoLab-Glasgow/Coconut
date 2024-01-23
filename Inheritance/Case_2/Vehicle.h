@@ -29,7 +29,7 @@ BETTER_ENUM (VehicleStates , int ,
 	STOP
 )
 
-using Vehicle_Typestate = Typestate_Template<
+using Vehicle_Typestate= Typestate_Template<
     State<+VehicleStates::IDEL, &Vehicle::Start, +VehicleStates::START>,
 	State<+VehicleStates::START, &Vehicle::Set_Speed, +VehicleStates::MOVEING>,
 	State<+VehicleStates::MOVEING, &Vehicle::Set_Speed, +VehicleStates::MOVEING>,
