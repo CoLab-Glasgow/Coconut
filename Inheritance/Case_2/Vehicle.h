@@ -22,15 +22,14 @@ public:
 };
 
 
-BETTER_ENUM (VehicleStates , int , 
+BETTER_ENUM (VehicleStates, int, 
 	IDEL,
 	START,
 	MOVEING,
-	STOP
-)
+	STOP)
 
 using Vehicle_Typestate= Typestate_Template<
-    State<+VehicleStates::IDEL, &Vehicle::Start, +VehicleStates::START>,
+        State<+VehicleStates::IDEL, &Vehicle::Start, +VehicleStates::START>,
 	State<+VehicleStates::START, &Vehicle::Set_Speed, +VehicleStates::MOVEING>,
 	State<+VehicleStates::MOVEING, &Vehicle::Set_Speed, +VehicleStates::MOVEING>,
 	State<+VehicleStates::MOVEING, &Vehicle::Stop, +VehicleStates::STOP>>;
