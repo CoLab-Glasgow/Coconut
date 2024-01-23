@@ -56,13 +56,13 @@ BETTER_ENUM(BasketState , int,
 )
 
 using Basket_protocol = Typestate_Template<
-    State<BasketState::EMPTY, &Basket_Class::addItemsToBasket, BasketState::NONEMPTY>,
-    State<BasketState::EMPTY, &Basket_Class::clear, BasketState::END>,
-    State<BasketState::NONEMPTY, &Basket_Class::addItemsToBasket, BasketState::NONEMPTY>,
-    State<BasketState::NONEMPTY, &Basket_Class::deleteItem, BasketState::UNKNOWN>,
-    State<BasketState::UNKNOWN, &Basket_Class::addItemsToBasket, BasketState::NONEMPTY>,
-    State<BasketState::UNKNOWN, &Basket_Class::clear, BasketState::EMPTY>,
-    State<BasketState::NONEMPTY, &Basket_Class::calculate, BasketState::END>
+    State<+BasketState::EMPTY, &Basket_Class::addItemsToBasket, +BasketState::NONEMPTY>,
+    State<+BasketState::EMPTY, &Basket_Class::clear, +BasketState::END>,
+    State<+BasketState::NONEMPTY, &Basket_Class::addItemsToBasket, +BasketState::NONEMPTY>,
+    State<+BasketState::NONEMPTY, &Basket_Class::deleteItem, +BasketState::UNKNOWN>,
+    State<+BasketState::UNKNOWN, &Basket_Class::addItemsToBasket, +BasketState::NONEMPTY>,
+    State<+BasketState::UNKNOWN, &Basket_Class::clear, +BasketState::EMPTY>,
+    State<+BasketState::NONEMPTY, &Basket_Class::calculate, +BasketState::END>
 >;
 
 using Basket = TypestateClassConnector<Basket_Class, Basket_protocol>;
