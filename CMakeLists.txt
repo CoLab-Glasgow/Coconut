@@ -23,6 +23,7 @@ add_executable(Client8 Inheritance/Case_2/main.cpp)
 add_executable(Client9 Inheritance/Case_3/main.cpp)
 add_executable(Client10 Inheritance/Case_4/main.cpp)
 add_executable(Client11 LightSwitch_Example/main.cpp) 
+add_executable(Client12 Http_connection/main.cpp) 
 # Include Boost for all executable targets
 target_include_directories(Client1 PRIVATE ${Boost_INCLUDE_DIRS} ${GRAPHVIZ_INCLUDE_DIR} ${GRAPHVIZ_LIBRARY})
 target_include_directories(Client2 PRIVATE ${Boost_INCLUDE_DIRS} ${GRAPHVIZ_INCLUDE_DIR} ${GRAPHVIZ_LIBRARY})
@@ -34,6 +35,7 @@ target_include_directories(Client8 PRIVATE ${Boost_INCLUDE_DIRS} ${GRAPHVIZ_INCL
 target_include_directories(Client9 PRIVATE ${Boost_INCLUDE_DIRS} ${GRAPHVIZ_INCLUDE_DIR} ${GRAPHVIZ_LIBRARY})
 target_include_directories(Client10 PRIVATE ${Boost_INCLUDE_DIRS} ${GRAPHVIZ_INCLUDE_DIR} ${GRAPHVIZ_LIBRARY})
 target_include_directories(Client11 PRIVATE ${Boost_INCLUDE_DIRS} ${GRAPHVIZ_INCLUDE_DIR} ${GRAPHVIZ_LIBRARY})
+target_include_directories(Client12 PRIVATE ${Boost_INCLUDE_DIRS} ${GRAPHVIZ_INCLUDE_DIR} ${GRAPHVIZ_LIBRARY})
 
 # Include TypestateLibrary.h for all executable targets
 target_include_directories(Client1 PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/include/Typestate_Library/ ${CMAKE_CURRENT_SOURCE_DIR}/external/)
@@ -45,4 +47,5 @@ target_include_directories(Client6 PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/include/
 target_include_directories(Client8 PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/include/include/Typestate_Library/ ${CMAKE_CURRENT_SOURCE_DIR}/external/)
 target_include_directories(Client9 PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/include/include/Typestate_Library/ ${CMAKE_CURRENT_SOURCE_DIR}/external/)
 target_include_directories(Client10 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include/include/Typestate_Library/ ${CMAKE_CURRENT_SOURCE_DIR}/external/)
-target_include_directories(Client11 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include/include/Typestate_Library/ ${CMAKE_CURRENT_SOURCE_DIR}/external/)
+target_include_directories(Client11 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include/Typestate_Library/ ${CMAKE_CURRENT_SOURCE_DIR}/external/)
+target_include_directories(Client12 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include/Typestate_Library/ ${CMAKE_CURRENT_SOURCE_DIR}/external/)
