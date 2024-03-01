@@ -4,9 +4,7 @@
 int main() {
     Pillbox* pillbox; 
     Drawer* drawer = new Drawer("Melatonin", 1, 300);
-
     (pillbox->*&PillBox::addDrawers)(std::move(drawer));
-
     (pillbox->*&PillBox::Activate_pillBox)();
     Drawer* d = (pillbox->*&PillBox::Process_System_Time)(1,300);
     (pillbox->*&PillBox::Switch_ON)(std::move(d),0);
