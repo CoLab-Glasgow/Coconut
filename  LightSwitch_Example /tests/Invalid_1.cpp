@@ -1,4 +1,4 @@
-#include "LightSwitch.h"
+#include "../LightSwitch.h"
 
 int main(int argc, char** argv) {   
     lightswitch ls;
