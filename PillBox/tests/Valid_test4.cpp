@@ -7,8 +7,8 @@ int main() {
     Drawer* drawer2 = new Drawer("Zinc", 5, 60);
 
     // Adding multiple drawers
-    (pillbox->*&PillBox::addDrawers)(drawer1);
-    (pillbox->*&PillBox::addDrawers)(drawer2);
+    (pillbox->*&PillBox::addDrawers)(std::move(drawer1));
+    (pillbox->*&PillBox::addDrawers)(std::move(drawer2));
 
     // Activate pillbox
     (pillbox->*&PillBox::Activate_pillBox)();
@@ -17,14 +17,15 @@ int main() {
     Drawer* d = (pillbox->*&PillBox::Process_System_Time)(4,120);
 
     // Turning LED on
-    (pillbox->*&PillBox::Switch_ON)(d, 0);
+    (pillbox->*&PillBox::Switch_ON)(std::move(d), 0);
 
     // Executing multiple blink operations
-    (pillbox->*&PillBox::Blink)(d);
-    (pillbox->*&PillBox::Blink)(d);
+    (pillbox->*&PillBox::Blink)(std::move(d));
+    (pillbox->*&PillBox::Blink)(std::move(d));
 
     // Safely turning off the LED before ending
-    (pillbox->*&PillBox::Switch_OFF)(d);
+    (pillbox->*&PillBox::Switch_OFF)(std::move(d));
 
+    
     return 0;
 }
