@@ -42,8 +42,6 @@ cmake ...
 ### Environment of the build ##
 Windows 11 Pro, using Visual Studio Code as the IDE (Version: 1.87.2), with GCC version 13.2.0 (MinGW-W64 x86_64-msvcrt-posix-she)
 ### To Compile and configure examples with cmake ###
- 
-To compile one of the case studies use this command
 
  ``` 
 cmake --build . --target Client1
