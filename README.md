@@ -43,7 +43,7 @@ cmake ...
 
 Windows 11 Pro, using Visual Studio Code as the IDE (Version: 1.87.2), with GCC version 13.2.0 (MinGW-W64 x86_64-msvcrt-posix-she)
 
-#### To Compile and configure examples with cmake ####
+#### To compile and configure examples with cmake ####
 
 for one case study use this command: 
  ``` 
