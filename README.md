@@ -36,15 +36,14 @@ cd Coconut
 mkdir build
 cd build 
 cmake ... 
-make
 ```
 
-### Compile the examples ###
+### To Compile and configure examples with cmake ###
  
 To compile one of the case studies use this command
 
  ``` 
-g++-10 -std=c++20 CaseStudyName.cpp
+cmake --build . --target Client1
 
 ```
  
