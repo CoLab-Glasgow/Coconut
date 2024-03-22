@@ -1,6 +1,7 @@
 # Coconut tool 
 This Typestate Library is a tool that enables C++ users to define a protocol for their classes. This tool will significantly facilitate and secure the user’s work by detecting any violations of the protocol that the user specifies for objects.
 
+
 ### Download C++ ###
 - On Windows, you can download it from [here.](https://docs.microsoft.com/en-us/cpp/build/vscpp-step-0-installation?view=msvc-170/ "Install C and C++ support in Visual Studio") 
 
@@ -21,7 +22,8 @@ git clone https://github.com/CoLab-Glasgow/Coconut.git
 ``` 
 git clone --branch boost-1.81.0 --depth 1 https://github.com/boostorg/boost.git
 
-``` 
+```
+
 ### Build the Coconut Library ##
 - Navigate to the "Coconut" directory using the command:
 
@@ -37,7 +39,8 @@ mkdir build
 cd build 
 cmake ... 
 ```
-
+### Environment of the build ##
+Windows 11 Pro, using Visual Studio Code as the IDE (Version: 1.87.2), with GCC version 13.2.0 (MinGW-W64 x86_64-msvcrt-posix-she)
 ### To Compile and configure examples with cmake ###
  
 To compile one of the case studies use this command
