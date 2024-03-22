@@ -147,7 +147,7 @@ namespace TypestateLibrary {
 
             hana::for_each(states, [&](auto x) {
                 if (b == x.GetValueState() && reinterpret_cast<decltype(x.GetValueFP())>(f) == x.GetValueFP()) {
-                    std::cout << x.GetValueState() << std::endl;
+                    
                     y = x.GetValueState();
                     z = reinterpret_cast<decltype(z)>(x.GetValueFP());
                     w = x.GetValueNextState();
@@ -197,12 +197,28 @@ namespace TypestateLibrary {
 
     };
 
-    
+   // Primary template for function_traits, left undefined on purpose.
+   template<typename T>
+    struct function_traits;
+
+  // Specialization for non-const member function pointers
+    template<typename C, typename R, typename... Args>
+     struct function_traits<R(C::*)(Args...)> {
+      using return_type = R;
+      };
+
+   // Specialization for const member function pointers
+     template<typename C, typename R, typename... Args>
+     struct function_traits<R(C::*)(Args...) const> {
+      using return_type = R;
+      };
+
     /*
     Class `State_Manager` enforces the typestate pattern while leveraging
     compile-time defined states and transitions. It tracks instances of objects, ensuring
     they move through their defined states according to the typestate specification.
     */
+ 
 
 
     template <typename T, typename TypestateTemplate>
@@ -217,12 +233,12 @@ namespace TypestateLibrary {
         State_Manager() {
             counter_++;
             TrackedInstances_.insert(std::make_pair(reinterpret_cast<T*>(this), V));
-            std::cout << "Creating instance " << this << " at state " << V << std::endl;
+            //std::cout << "Creating instance " << this << " at state " << V << std::endl;
         }
 
         ~State_Manager() {
             TrackedInstances_.erase(reinterpret_cast<T*>(this));
-            std::cout << "Destroying instance " << this << " at state " << V << std::endl;
+            //std::cout << "Destroying instance " << this << " at state " << V << std::endl;
         }
 
         // Static method to access all tracked instances.
@@ -235,8 +251,8 @@ namespace TypestateLibrary {
         void Typestate_Checking(F func, Args... args) {
             const auto AnyMethod = Prot.find_any_time_method(func);
 
-            if (func == AnyMethod) {
-                std::cout << "Calling anytime method " << typeid(func).name() << " on instance " << this << std::endl;
+            if (reinterpret_cast<decltype(AnyMethod)>(func) == AnyMethod) {
+                //std::cout << "Calling anytime method " << typeid(func).name() << " on instance " << this << std::endl;
             } else {
                 static std::map<T*, int>& mapRef = this->GetTrackedInstances();
                 const auto current_state = Prot.Get_target_state(mapRef[this], func);
@@ -249,8 +265,14 @@ namespace TypestateLibrary {
                 } else {
 
                     // Handle error for invalid state transition or function call.
-                    static_assert(std::is_same<decltype(FP), decltype(value)>::value,
-                        "Calling method Cause errors, Follow the typestate specfications!");
+                    using func_type = decltype(func);
+                    using return_type = function_traits<func_type>::return_type;
+                    using fp_type = decltype(FP);
+                    using return_type_FP = function_traits<func_type>::return_type;
+    
+                    static_assert(std::is_same<return_type, return_type_FP>::value,
+                    "Calling method causes errors, follow the type state specifications!");
+                   
                     std::cerr << "Error: Invalid state transition or function call." << std::endl;
                     HANDLE_ERROR("State transition or function call does not match the allowed transitions.");
                 }
@@ -296,5 +318,5 @@ namespace TypestateLibrary {
         }
     };
 
-    
+
 }
