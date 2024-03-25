@@ -6,9 +6,9 @@ using TypestateLibrary::State;
 using TypestateLibrary::TypestateClassConnector;
 using TypestateLibrary::Typestate_Template;
 
-class Car : public Vehicle {
+class Car : public vehicle {
 public:
-        void Activate_cruise(const long d) {
+    void Activate_cruise(const long d) {
 		std::cout<<"Activate cruise control with speed "<<d<<std::endl;
 	}
 	void  Pressing_Accelerator(long d) {
@@ -25,10 +25,10 @@ public:
 BETTER_ENUM(CarStates, int , MOVING, ACCELERATING, BRAKING , CRUISING, STOPPED);
 
 using TypestateCar = Typestate_Template <
-	State<+CarStates::MOVING, &Car::Activate_cruise, +CarStates::CRUISING>,
-	State<+CarStates::CRUISING, &Car::Pressing_Accelerator, +CarStates::ACCELERATING>,
-	State<+CarStates::CRUISING, &Car::Apply_brakes, +CarStates::BRAKING>,
-	State<+CarStates::MOVING, &Car::Apply_brakes, +CarStates::BRAKING>,
-	State<+CarStates::BRAKING, &Car::Halt, +CarStates::STOPPED>>;
+	State<CarStates::MOVING, &Car::Activate_cruise, CarStates::CRUISING>,
+	State<CarStates::CRUISING, &Car::Pressing_Accelerator, CarStates::ACCELERATING>,
+	State<CarStates::CRUISING, &Car::Apply_brakes, CarStates::BRAKING>,
+	State<CarStates::MOVING, &Car::Apply_brakes, CarStates::BRAKING>,
+	State<CarStates::BRAKING, &Car::Halt, CarStates::STOPPED>>;
 
 using car = TypestateClassConnector<Car,TypestateCar>;
