@@ -1,3 +1,4 @@
+
 #ifndef Vehicle_HEADER
 #define Vehicle_HEADER
 #include "TypestateLibrary.h"
@@ -9,7 +10,7 @@ class Vehicle
 {
 	long speed;
 public:
-	void Start() {
+	void Start(){
 		std::cout << "Starting the Vehicle" << std::endl;
 	}
 	void Set_Speed(long s) {
@@ -19,20 +20,21 @@ public:
         void Stop() {
 		std::cout << "Vehicle Stopped !";
 	}
+	
 };
 
-
-BETTER_ENUM (VehicleStates, int, 
+enum VehicleStates {
 	IDEL,
 	START,
 	MOVEING,
-	STOP)
+	STOP
+};
+using Vehicle_Typestate = Typestate_Template<
+        State<VehicleStates::IDEL, &Vehicle::Start, VehicleStates::START>,
+	State<VehicleStates::START, &Vehicle::Set_Speed, VehicleStates::MOVEING>,
+	State<VehicleStates::MOVEING, &Vehicle::Set_Speed, VehicleStates::MOVEING>,
+	State<VehicleStates::MOVEING, &Vehicle::Stop, VehicleStates::STOP>>;
 
-using Vehicle_Typestate= Typestate_Template<
-        State<+VehicleStates::IDEL, &Vehicle::Start, +VehicleStates::START>,
-	State<+VehicleStates::START, &Vehicle::Set_Speed, +VehicleStates::MOVEING>,
-	State<+VehicleStates::MOVEING, &Vehicle::Set_Speed, +VehicleStates::MOVEING>,
-	State<+VehicleStates::MOVEING, &Vehicle::Stop, +VehicleStates::STOP>>;
-	
+
 using vehicle = TypestateClassConnector<Vehicle, Vehicle_Typestate>;
 #endif
