@@ -8,11 +8,9 @@ class Car : public vehicle {
 
 public:
 	
-
 	void  Play_Music(){
 		std::cout << "Music is On! " << std::endl;
 	}
-
 
 	void Adjust_Seats() {
 		std::cout << "Seats are adjusted! " << std::endl;
@@ -21,8 +19,6 @@ public:
 		std::cout << "The car is stopped" << std::endl;
 
 	}
-
-
 
 
 };
