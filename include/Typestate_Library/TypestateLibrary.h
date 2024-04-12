@@ -259,19 +259,19 @@ namespace TypestateLibrary {
                 const auto cs = boost::hana::at_c<0>(current_state);
                 const auto FP = boost::hana::at_c<1>(current_state);
                 const auto NS = boost::hana::at_c<2>(current_state);
-
-                if (cs == mapRef[this] && reinterpret_cast<decltype(FP)>(func) == FP) {
-                    mapRef[this] = NS;
-                } else {
-
+                
                     // Handle error for invalid state transition or function call.
                     using func_type = decltype(func);
                     using return_type = function_traits<func_type>::return_type;
                     using fp_type = decltype(FP);
                     using return_type_FP = function_traits<func_type>::return_type;
     
-                    static_assert(std::is_same<return_type, return_type_FP>::value,
-                    "Calling method causes errors, follow the type state specifications!");
+                  static_assert(std::is_same<return_type, return_type_FP>::value,
+                  "Calling method causes errors, follow the type state specifications!");
+
+                if (cs == mapRef[this] && reinterpret_cast<decltype(FP)>(func) == FP) {
+                    mapRef[this] = NS;
+                } else {
                    
                     std::cerr << "Error: Invalid state transition or function call." << std::endl;
                     HANDLE_ERROR("State transition or function call does not match the allowed transitions.");
@@ -304,19 +304,21 @@ namespace TypestateLibrary {
     types. It intercepts method calls to perform typestate checks, ensuring that object
     interactions adhere to the defined typestate pattern. 
     */
-
     template <typename T, typename TypestateTemplate>
     class TypestateClassConnector : public State_Manager<T, TypestateTemplate> {
-    public: 
-       
-        template<typename... Args>
-        auto operator->*(auto (T::* funcPtr)(Args...)) {
-            return [this, funcPtr](Args&&... args) -> decltype(auto) {
-                this->Typestate_Checking(funcPtr, std::forward<Args>(args)...);
-                return (this->*funcPtr)(std::forward<Args>(args)...);
-            };
-        }
-    };
+    public:
+    // This template ensures that the method pointer belongs to T or a subclass of T
+    template<typename U, typename... Args,
+             typename std::enable_if<std::is_base_of<T, U>::value, int>::type = 0>
+    auto operator->*(auto (U::* funcPtr)(Args...)) {
+        return [this, funcPtr](Args... args) -> decltype(auto) {
+
+            this->Typestate_Checking(funcPtr, args...);  
+            return (static_cast<U*>(this)->*funcPtr)(args...);  
+        };
+    }
+};
+
 
 
 }
