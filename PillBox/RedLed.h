@@ -1,5 +1,4 @@
 #include <iostream>
-
 class RedLed {
 public:
 void setRedLed(std::string state) {
