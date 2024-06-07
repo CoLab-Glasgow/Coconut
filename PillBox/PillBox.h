@@ -7,6 +7,8 @@ using TypestateLibrary::TypestateClassConnector;
 using TypestateLibrary::State;
 using TypestateLibrary::Typestate_Template;
 
+
+
 class PillBox {
 public:
     
