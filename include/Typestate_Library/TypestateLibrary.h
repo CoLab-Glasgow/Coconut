@@ -100,16 +100,49 @@ namespace TypestateLibrary {
         }
     };
 
+  struct Seconds {
+    static constexpr const char* name = "s";
+    using duration_type = std::chrono::seconds;
+    };
+
+  struct Minutes {
+    static constexpr const char* name = "m";
+    using duration_type = std::chrono::minutes;
+     };
+
+struct Hours {
+    static constexpr const char* name = "h";
+    using duration_type = std::chrono::hours;
+   };
+
+
+template<int Value, typename Unit>
+struct Duration {
+    static constexpr int value = Value;
+    using unit = Unit;
+
+    static constexpr auto getDuration() {
+        return typename Unit::duration_type(value);
+    }
+
+    static void print() {
+        std::cout << value << Unit::name << std::endl;
+    }
+};
+
     /*
     Specialized version of `State` for states with a timed guard.
     */
-    template<auto state, auto FP, int guardSeconds, auto NextState>
+    template<auto state, auto FP, typename Duration, auto NextState>
     struct Timed_State : public State<state, FP, NextState> {
-        using guardType = std::chrono::seconds;
+        static constexpr auto guard = Duration::getDuration();
 
-        static constexpr guardType guard = std::chrono::seconds(guardSeconds);
-        
-    };
+         static void execute() {
+           std::cout << "State: " << state << "\n"
+                  << "Guard Duration: " << guard.count() << " " << Duration::unit::name << "\n";
+        }
+       };
+
  
 
     /*
