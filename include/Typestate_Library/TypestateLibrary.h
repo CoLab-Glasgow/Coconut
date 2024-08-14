@@ -100,6 +100,17 @@ namespace TypestateLibrary {
         }
     };
 
+    /*
+    Specialized version of `State` for states with a timed guard.
+    */
+    template<auto state, auto FP, int guardSeconds, auto NextState>
+    struct Timed_State : public State<state, FP, NextState> {
+        using guardType = std::chrono::seconds;
+
+        static constexpr guardType guard = std::chrono::seconds(guardSeconds);
+        
+    };
+ 
 
     /*
     Struct `Typestate_Template` manages a collection of `State` instances, defining
