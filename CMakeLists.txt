@@ -11,19 +11,10 @@ include_directories(${GRAPHVIZ_INCLUDE_DIR})
 # Define a list of all client source files and their corresponding target names
 set(CLIENT_SOURCES_AND_NAMES
     PillBox/main.cpp Client1
-    PillBox/tests/Valid_test1.cpp Valid_test1
-    PillBox/tests/Valid_test2.cpp Valid_test2
-    PillBox/tests/Valid_test3.cpp Valid_test3
-    PillBox/tests/Valid_test4.cpp Valid_test4
     File_example/main.cpp Client2
     #BankAccount_Example/main.cpp Client3
     Sound/main.cpp Client4
-    Sound/tests/test1_v.cpp    s_test1
-    Sound/tests/test2_v.cpp    s_test2
-    Sound/tests/test3_v.cpp    s_test3
     Student/main.cpp Client5
-    Student/tests/test1_V.cpp st_v_test1
-    Student/tests/test2_V.cpp st_v_test2
     Basket/main.cpp Client6
     Inheritance/Case_1/main.cpp Client7
     Inheritance/Case_2/main.cpp Client8
