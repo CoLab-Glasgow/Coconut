@@ -22,6 +22,7 @@ set(CLIENT_SOURCES_AND_NAMES
     Inheritance/Case_4/main.cpp Client10
     LightSwitch_Example/main.cpp Client11
     Http_connection/main.cpp Client12
+    Robot/main.cpp Client13
 )
 
 # Use list(LENGTH) and math(EXPR) to iterate through the list in pairs
