@@ -1,7 +1,8 @@
 #include <iostream>
+
 class RedLed {
 public:
-void setRedLed(std::string state) {
+void setRedLed(const char* state) {
     this->RedLedState = state;
 }
 private:

@@ -2,7 +2,7 @@
 
 class Drawer {
 public:
-    Drawer(std::string pillName, int hour, int minute)
+    Drawer(const char* pillName, int hour, int minute)
         : pillName_(pillName), hour_(hour), minute_(minute) {}
     std::string get_pill_name()
     {
@@ -23,7 +23,7 @@ public:
     }
     
 private:
-    std::string pillName_;
+    const char* pillName_;
     int hour_;
     int minute_;
     const char* DrawerState = "CLOSED";
