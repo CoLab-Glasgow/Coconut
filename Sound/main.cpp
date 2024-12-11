@@ -1,10 +1,10 @@
 #include "Sound.h"
 
 int main(int argc, const char* argv[]) {  
-   sound s;
-   (s->*&Sound::TurnON)();
-   (s->*&Sound::turnLow)();
-   (s->*&Sound::turnHigh)();
-   (s->*&Sound::TurnOff)();
+   Sound s;
+   s.TurnON();
+   s.turnLow();
+   s.turnHigh();
+   s.TurnOff();
     return 0;
 }
