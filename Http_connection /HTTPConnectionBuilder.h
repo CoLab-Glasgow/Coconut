@@ -1,12 +1,12 @@
-#include "TypestateLibrary.h"
+#include "../include/Typestate_Library/TypestateLibrary.h"
 #include <iostream>
 #include <string>
 #include <tuple>
 #include <vector>
 
-using TypestateLibrary::TypestateClassConnector;
-using TypestateLibrary::State;
-using TypestateLibrary::Typestate_Template;
+using TypestateLibrary::Template::TypestateClassConnector;
+using TypestateLibrary::Template::State;
+using TypestateLibrary::Template::Typestate_Template;
 
 // Dummy connection class
 using HTTPConnection = std::tuple<std::vector<std::string>, std::string>;
@@ -36,15 +36,23 @@ private:
     std::string body_;
 };
 
-BETTER_ENUM(HTTPBuilderState, int,
+enum class HTTPBuilderState{
     Start, Headers, Body, Built
-);
+};
 
 using HTTPBuilderTypestate = Typestate_Template<
-    State<+HTTPBuilderState::Start, &HTTPConnectionBuilder::add_header, +HTTPBuilderState::Headers>,
-    State<+HTTPBuilderState::Headers, &HTTPConnectionBuilder::add_header, +HTTPBuilderState::Headers>,
-    State<+HTTPBuilderState::Headers, &HTTPConnectionBuilder::add_body, +HTTPBuilderState::Body>,
-    State<+HTTPBuilderState::Body, &HTTPConnectionBuilder::build, +HTTPBuilderState::Built>
+    State<HTTPBuilderState::Start, &HTTPConnectionBuilder::add_header, HTTPBuilderState::Headers>,
+    State<HTTPBuilderState::Headers, &HTTPConnectionBuilder::add_header, HTTPBuilderState::Headers>,
+    State<HTTPBuilderState::Headers, &HTTPConnectionBuilder::add_body, HTTPBuilderState::Body>,
+    State<HTTPBuilderState::Body, &HTTPConnectionBuilder::build, HTTPBuilderState::Built>
 >;
 
-using HTTPBuilder = TypestateClassConnector<HTTPConnectionBuilder, HTTPBuilderTypestate>;
+using HTTPBuilderFlag = TypestateClassConnector<HTTPConnectionBuilder, HTTPBuilderTypestate>;
+
+
+HTTPBuilderTypestate Httptyp;
+HTTPBuilderFlag Httpflag;
+void init(){
+Httpflag.display();
+Httptyp.display();
+}
