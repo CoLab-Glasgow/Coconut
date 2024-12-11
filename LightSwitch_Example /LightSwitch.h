@@ -32,10 +32,10 @@ using LightSwitchProtocol = Typestate_Template<
     State<LightSwitchState::ON,  &LightSwitch::SwitchOff, LightSwitchState::OFF>
 >;
 
-using lightswitch = TypestateClassConnector<LightSwitch, LightSwitchProtocol>;
+using lightswitchFlag = TypestateClassConnector<LightSwitch, LightSwitchProtocol>;
 
-lightswitch lp;
-LightSwitchProtocol j;
+lightswitchFlag lSP;
+LightSwitchProtocol LSP;
 void init(){
 j.display();
 lp.display();

@@ -1,11 +1,10 @@
 #include "LightSwitch.h"
 
 int main(int argc, char** argv) {   
-    lightswitch ls;
-    (ls->*&LightSwitch::turnOn)();
-    (ls->*&LightSwitch::turnOff)();
-    // The following lines will result in compile-time errors due to invalid state transitions
-    // (ls->*&LightSwitch::turnOn)();
-    // (ls->*&LightSwitch::turnOff)();
+    LightSwitch ls;
+     ls.SwitchOn();
+     ls.SwitchOff();
+    // The following line will result in compile-time errors due to invalid state transitions
+    // ls.SwitchOff();
     return 0;
 }
