@@ -1,31 +1,42 @@
 #include <cstdlib>
 #include <iostream>
-#include "TypestateLibrary.h" 
+//#include "TypestateLibrary.h" 
 
-using TypestateLibrary::TypestateClassConnector;
-using TypestateLibrary::State;
-using TypestateLibrary::Typestate_Template;
+#include "../include/Typestate_Library/TypestateLibrary.h"
+
+using TypestateLibrary::Template::TypestateClassConnector;
+using TypestateLibrary::Template::State;
+using TypestateLibrary::Template::Typestate_Template;
+
+
 
 class LightSwitch {
 public:
-    void turnOn() {
-        std::cout << "Switching On\n";
+ void SwitchOn() {
+    std::cout<<"Switching On\n";
     }
-
-    void turnOff() {
-        std::cout << "Switching Off\n";
+ void SwitchOff() {
+    std::cout<<"Switching Off\n";
     }
 };
 
-BETTER_ENUM(LightSwitchState, int, 
-    OFF,
-    ON
-)
+enum class LightSwitchState{
+    OFF=0,
+    ON=1,
+};
 
 using LightSwitchProtocol = Typestate_Template<
-    State<+LightSwitchState::OFF, &LightSwitch::turnOn, +LightSwitchState::ON>,
-    State<+LightSwitchState::ON, &LightSwitch::turnOff, +LightSwitchState::OFF>
+
+    State<LightSwitchState::OFF, &LightSwitch::SwitchOn, LightSwitchState::ON>,
+
+    State<LightSwitchState::ON,  &LightSwitch::SwitchOff, LightSwitchState::OFF>
 >;
 
 using lightswitch = TypestateClassConnector<LightSwitch, LightSwitchProtocol>;
 
+lightswitch lp;
+LightSwitchProtocol j;
+void init(){
+j.display();
+lp.display();
+}
