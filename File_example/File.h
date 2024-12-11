@@ -1,9 +1,11 @@
 #include <fstream>
-#include "TypestateLibrary.h"
-using TypestateLibrary::TypestateClassConnector;
-using TypestateLibrary::State;
-using TypestateLibrary::Typestate_Template;
-// file class with all methods to handle file objects 
+#include "../include/Typestate_Library/TypestateLibrary.h"
+
+using TypestateLibrary::Template::TypestateClassConnector;
+using TypestateLibrary::Template::State;
+using TypestateLibrary::Template::Typestate_Template;
+
+
 class File {   
     std::string myfileName;
     std::ifstream file;
@@ -25,17 +27,28 @@ public:
 };
 
 // define states of the protocol 
-BETTER_ENUM(FileState, int,
+enum class FileState{ 
     INIT,
     OPEN,
     READ,
-    CLOSE)
+    CLOSE
+    };
 
 using File_protocol = Typestate_Template<
-    State<+FileState::INIT,  &File::OpenFile, +FileState::OPEN>,
-    State<+FileState::OPEN, &File::read, +FileState::READ>,
-    State<+FileState::READ, &File::ReadNext, +FileState::READ>,
-    State<+FileState::READ,  &File::Close, +FileState::CLOSE>
+    State<FileState::INIT,  &File::OpenFile, FileState::OPEN>,
+    State<FileState::OPEN, &File::read, FileState::READ>,
+    State<FileState::READ, &File::ReadNext, FileState::READ>,
+    State<FileState::READ,  &File::Close, FileState::CLOSE>,
+    State<FileState::CLOSE,  &File::OpenFile, FileState::OPEN>
 >;
 
-using File_example = TypestateClassConnector<File, File_protocol>;
+using File_flag = TypestateClassConnector<File, File_protocol>;
+
+
+
+File_flag fileflag;
+File_protocol fprot;
+void init(){
+fprot.display();
+fileflag.display();
+}
