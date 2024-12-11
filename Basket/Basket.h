@@ -1,12 +1,11 @@
 #include <vector>
 #include <algorithm>
 #include <string>
-#include "TypestateLibrary.h"
+#include "../include/Typestate_Library/TypestateLibrary.h"
 
-
-using TypestateLibrary::TypestateClassConnector;
-using TypestateLibrary::State;
-using TypestateLibrary::Typestate_Template;
+using TypestateLibrary::Template::TypestateClassConnector;
+using TypestateLibrary::Template::State;
+using TypestateLibrary::Template::Typestate_Template;
 
 
 class Basket_Class { 
@@ -48,21 +47,28 @@ public:
     }
 };
 
-BETTER_ENUM(BasketState , int,
+enum BasketState{
     EMPTY,
     NONEMPTY,
     UNKNOWN,
     END
-)
+};
 
 using Basket_protocol = Typestate_Template<
-    State<+BasketState::EMPTY, &Basket_Class::addItemsToBasket, +BasketState::NONEMPTY>,
-    State<+BasketState::EMPTY, &Basket_Class::clear, +BasketState::END>,
-    State<+BasketState::NONEMPTY, &Basket_Class::addItemsToBasket, +BasketState::NONEMPTY>,
-    State<+BasketState::NONEMPTY, &Basket_Class::deleteItem, +BasketState::UNKNOWN>,
-    State<+BasketState::UNKNOWN, &Basket_Class::addItemsToBasket, +BasketState::NONEMPTY>,
-    State<+BasketState::UNKNOWN, &Basket_Class::clear, +BasketState::EMPTY>,
-    State<+BasketState::NONEMPTY, &Basket_Class::calculate, +BasketState::END>
+    State<BasketState::EMPTY, &Basket_Class::addItemsToBasket, BasketState::NONEMPTY>,
+    State<BasketState::NONEMPTY, &Basket_Class::addItemsToBasket, BasketState::NONEMPTY>,
+    State<BasketState::NONEMPTY, &Basket_Class::deleteItem, BasketState::UNKNOWN>,
+    State<BasketState::UNKNOWN, &Basket_Class::addItemsToBasket, BasketState::NONEMPTY>,
+    State<BasketState::UNKNOWN, &Basket_Class::clear, BasketState::EMPTY>,
+    State<BasketState::NONEMPTY, &Basket_Class::calculate, BasketState::END>
 >;
 
-using Basket = TypestateClassConnector<Basket_Class, Basket_protocol>;
+using BasketFlag = TypestateClassConnector<Basket_Class, Basket_protocol>;
+
+
+BasketFlag BFlag;
+Basket_protocol Bp;
+void init(){
+BFlag.display();
+Bp.display();
+}
