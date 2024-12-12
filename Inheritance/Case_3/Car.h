@@ -1,18 +1,18 @@
-#include <iostream>
-#include "TypestateLibrary.h"
+
+#include "../TypestateLibrary.h"
 #include "Vehicle.h"
 
-using TypestateLibrary::TypestateClassConnector;
-using TypestateLibrary::State;
-using TypestateLibrary::Typestate_Template;
-
-
+using TypestateLibrary::Template::State;
+using TypestateLibrary::Template::Typestate_Template;
+using TypestateLibrary::Template::TypestateClassConnector;
 
 class Car : public Vehicle {
 
 long speed;
 public:
-
+   void Start() {
+		std::cout << "Turns the ignition key!"<<std::endl;
+	}
 	void SetSpeed(long s) {
 		this->speed = s;
 	}
@@ -33,12 +33,17 @@ enum CarStates {
 
 
 using typestatecar= Typestate_Template<
-	State<CarStates::IDEL, &Car::SetSpeed, CarStates::START>,
-	State<CarStates::START, &Car::StopTheVehicle, CarStates::STOP>,
+	State<CarStates::IDEL, &Car::Start, CarStates::START>,
 	State<CarStates::START, &Car::SetSpeed, CarStates::CHANGESPEED>,
 	State<CarStates::CHANGESPEED, &Car::SetSpeed, CarStates::CHANGESPEED>,
 	State<CarStates::CHANGESPEED, &Car::StopTheVehicle, CarStates::STOP>>;
 
 
-using car = TypestateClassConnector<Car, typestatecar>;
+using car_flag = TypestateClassConnector<Car, typestatecar>;
 
+car_flag carflag;
+typestatecar TC;
+void init(){
+TC.display();
+carflag.display();
+}
