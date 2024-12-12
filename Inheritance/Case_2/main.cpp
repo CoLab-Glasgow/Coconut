@@ -1,18 +1,22 @@
- #include "Vehicle.h"
- #include "Car.h"
+#include "Vehicle.h"
+#include "Car.h"
+ 
  int main() {
-	 vehicle V1; 
+	 Vehicle V1; 
 	 Car C;
-	 (V1->*&Vehicle::Start)();
-	 (V1->*&Vehicle::Set_Speed)(70);
-	 (V1->*&Vehicle::Set_Speed)(50);
-     (V1->*&Vehicle::Stop)();
+	 Vehicle& c_alise =C;
+	 Vehicle& v_alis=V1;
+	
+	 v_alis.Start();
+	 V1.Set_Speed(70);
+	 V1.Set_Speed(50);
+     V1.Stop();
        
-     (C->*&Vehicle::Start)();
-     (C->*&Vehicle::Set_Speed)(70);
-	 (C->*&Car::Play_Music)();
-	 (C->*&Vehicle::Set_Speed)(30);
-	 (C->*&Car::Adjust_Seats)();
-	 (C->*&Vehicle::Stop)();
+     C.Start();
+   //C.Set_Speed(70);
+	 C.Play_Music();
+	 c_alise.Set_Speed(30);
+	 C.Adjust_Seats();
+	 C.Stop();
 	 return 0;
  }
