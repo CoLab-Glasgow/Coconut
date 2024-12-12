@@ -1,12 +1,13 @@
 #include "Vehicle.h"
 #include "iostream"
-#include "TypestateLibrary.h"
+#include "../TypestateLibrary.h"
+#include "Vehicle.h"
 
-using TypestateLibrary::State;
-using TypestateLibrary::TypestateClassConnector;
-using TypestateLibrary::Typestate_Template;
+using TypestateLibrary::Template::State;
+using TypestateLibrary::Template::Typestate_Template;
+using TypestateLibrary::Template::TypestateClassConnector;
 
-class Car : public vehicle {
+class Car : public Vehicle {
 public:
     void Activate_cruise(const long d) {
 		std::cout<<"Activate cruise control with speed "<<d<<std::endl;
@@ -22,13 +23,21 @@ public:
 	}	
 };
 
-BETTER_ENUM(CarStates, int , MOVING, ACCELERATING, BRAKING , CRUISING, STOPPED);
+enum CarStates{ MOVING=2, CRUISING=3, BRAKING=4 ,STOPPED=5} ;
 
 using TypestateCar = Typestate_Template <
 	State<CarStates::MOVING, &Car::Activate_cruise, CarStates::CRUISING>,
-	State<CarStates::CRUISING, &Car::Pressing_Accelerator, CarStates::ACCELERATING>,
 	State<CarStates::CRUISING, &Car::Apply_brakes, CarStates::BRAKING>,
 	State<CarStates::MOVING, &Car::Apply_brakes, CarStates::BRAKING>,
-	State<CarStates::BRAKING, &Car::Halt, CarStates::STOPPED>>;
+	State<CarStates::CRUISING, &Car::Apply_brakes, CarStates::BRAKING>,
+	State<CarStates::BRAKING, &Car::Halt, CarStates::STOPPED>
+	>;
 
-using car = TypestateClassConnector<Car,TypestateCar>;
+using car_flag = TypestateClassConnector<Car,TypestateCar>;
+
+car_flag carflag;
+TypestateCar Tcar;
+void init_car(){
+Tcar.display();
+carflag.display();
+}

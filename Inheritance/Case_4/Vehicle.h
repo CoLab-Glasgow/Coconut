@@ -1,11 +1,19 @@
-#include "TypestateLibrary.h"
+
 #ifndef Vehicle_HEADER
 #define Vehicle_HEADER
 
-using TypestateLibrary::State;
-using TypestateLibrary::TypestateClassConnector;
-using TypestateLibrary::Typestate_Template;
+#include "../TypestateLibrary.h"
 
+using TypestateLibrary::Template::State;
+using TypestateLibrary::Template::Typestate_Template;
+using TypestateLibrary::Template::TypestateClassConnector;
+
+enum VehicleStates {
+	IDEL=0,
+	START=1,
+	MOVEING=2,
+	STOP=5
+};
 
 class Vehicle
 {
@@ -25,13 +33,21 @@ public:
 };
 
 
-BETTER_ENUM (VehicleStates, int, IDEL, START,  MOVING, STOPPED);
-          
+    
 using typestateVehicle = Typestate_Template<
-	State<+VehicleStates::IDEL ,&Vehicle::Start ,+VehicleStates::START>,
-	State<+VehicleStates::START , &Vehicle::Set_speed, +VehicleStates::MOVING>,
-	State<+VehicleStates::MOVING , &Vehicle::Set_speed ,+VehicleStates::MOVING>,
-	State<+VehicleStates::MOVING , &Vehicle::Stop, +VehicleStates::STOPPED>>;
+	State<VehicleStates::IDEL ,&Vehicle::Start ,VehicleStates::START>,
+	State<VehicleStates::START , &Vehicle::Set_speed, VehicleStates::MOVEING>,
+	State<VehicleStates::MOVEING , &Vehicle::Set_speed ,VehicleStates::MOVEING>,
+	State<VehicleStates::MOVEING , &Vehicle::Stop, VehicleStates::STOP>>;
+
+
+using vehicle_flag = TypestateClassConnector<Vehicle, typestateVehicle>;
+
+vehicle_flag vflag;
+typestateVehicle TypestV;
+void init(){
+TypestV.display();
+vflag.display();
+}
 
 #endif
-using vehicle = TypestateClassConnector<Vehicle, typestateVehicle>;

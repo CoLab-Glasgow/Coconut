@@ -1,20 +1,20 @@
+
 #include "Vehicle.h"
 #include "Car.h"
-#include "TypestateLibrary.h"
 
-static void operateVehicle (vehicle& v) {
-    (v->*&Vehicle::Start)();
-    (v->*&Vehicle::Set_speed)(70);
-    (v->*&Vehicle::Stop)();
+ void operateVehicle(Vehicle& v) {
+    v.Start();
+    v.Set_speed(70);
+    v.Stop();
 }
 
 int main() {
-    car car;
-    vehicle vehicle;
+   
+    Vehicle vehicle;
+    Car car;
     operateVehicle(vehicle);
     operateVehicle(car);
-    (car->*&Car::Activate_cruise)(50);
-    (car->*&Car::Apply_brakes)(20);
-    (car->*&Car::Halt)();
+   
+   
     return 0;
  }
