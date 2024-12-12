@@ -1,19 +1,13 @@
-
 #include "Car.h"
 
 int main() {
-
-	car V1;
-
-	// this will compile 
-	(V1->* & Car::SetSpeed)(50);
-	(V1->* & Car::SetSpeed)(70);
-	(V1->* & Car::SetSpeed)(50);
-	(V1->* & Car::StopTheVehicle)();
-
-	// this is will not compile
-	//(V1->* & car::StopTheVehicle)();
-	//(V1->* & car::SetSpeed)(70);
-
+	Car C1;
+    Car& C2= C1;
+	C1.Start();
+	C1.Play_music();
+//	C2.Start();
+	C1.SetSpeed(50);
+	C1.SetSpeed(70);
+    C1.StopTheVehicle();
 	return 0;
 }
