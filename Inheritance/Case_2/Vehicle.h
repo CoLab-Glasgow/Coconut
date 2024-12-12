@@ -1,10 +1,18 @@
-
 #ifndef Vehicle_HEADER
 #define Vehicle_HEADER
-#include "TypestateLibrary.h"
-using TypestateLibrary::TypestateClassConnector;
-using TypestateLibrary::State;
-using TypestateLibrary::Typestate_Template;
+
+#include "../include/Typestate_Library/TypestateLibrary.h"
+
+using TypestateLibrary::Template::State;
+using TypestateLibrary::Template::Typestate_Template;
+using TypestateLibrary::Template::TypestateClassConnector;
+
+enum VehicleStates {
+	IDEL,
+	START,
+	MOVEING,
+	STOP
+};
 // case 2: a class without typestate inherits from a class with typestate. 
 class Vehicle
 {
@@ -23,18 +31,26 @@ public:
 	
 };
 
-enum VehicleStates {
-	IDEL,
-	START,
-	MOVEING,
-	STOP
-};
+
+
+
+
 using Vehicle_Typestate = Typestate_Template<
-        State<VehicleStates::IDEL, &Vehicle::Start, VehicleStates::START>,
+    State<VehicleStates::IDEL, &Vehicle::Start, VehicleStates::START>,
 	State<VehicleStates::START, &Vehicle::Set_Speed, VehicleStates::MOVEING>,
 	State<VehicleStates::MOVEING, &Vehicle::Set_Speed, VehicleStates::MOVEING>,
 	State<VehicleStates::MOVEING, &Vehicle::Stop, VehicleStates::STOP>>;
 
 
-using vehicle = TypestateClassConnector<Vehicle, Vehicle_Typestate>;
+using Vehicle_flag = TypestateClassConnector<Vehicle, Vehicle_Typestate>;
+
+Vehicle_flag VehicleFlag;
+Vehicle_Typestate VT;
+void init(){
+VT.display();
+VehicleFlag.display();
+}
+
+
+
 #endif

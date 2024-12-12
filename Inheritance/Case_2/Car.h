@@ -1,6 +1,7 @@
+
 #include "Vehicle.h"
 
-class Car : public vehicle {
+class Car : public Vehicle {
 
 	std::string name;
 	
