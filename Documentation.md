@@ -217,7 +217,7 @@ The `Coconut_Experiment.ova` file is a virtual machine image. Follow these steps
 - A `run_all.sh` script for batch execution of code complexity scripts.
 
 
-### To run Performance metrics and generate table 2 in the paper (20-30 minutes) : Note that the results may vary slightly from those in the paper. However, they consistently show higher compile times for Coconut examples compared to the original examples. Additionally, Coconut examples consistently exhibit lower runtime, memory usage, and CPU consumption than the original examples.
+#### To run Performance metrics and generate table 2 in the paper (20-30 minutes) : Note that the results may vary slightly from those in the paper. However, they consistently show higher compile times for Coconut examples compared to the original examples. Additionally, Coconut examples consistently exhibit lower runtime, memory usage, and CPU consumption than the original examples.
 
 Navigate to `Performance-Analysis` folder and open a terminal and enter this command:
 ```shell
