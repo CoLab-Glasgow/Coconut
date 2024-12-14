@@ -16,7 +16,8 @@ Moreover, this artefact includes a comparative evaluation, benchmarking Coconut'
 
 #### ✅ Valid Example
 1. **Install Docker**: Follow the instructions at [Docker's official documentation](https://docs.docker.com/get-docker/).
-2. **Download the Docker Image**:
+2. **Download Coconut file from here** (https://doi.org/10.5281/zenodo.14478714)
+3. **Download the Docker Image**:
    - Download `coconut-project-v2.0.1.tar` from the repository.
    - Ensure Docker is running.
    - Load the Docker image:
@@ -25,22 +26,22 @@ Moreover, this artefact includes a comparative evaluation, benchmarking Coconut'
 
      ```
      **Expected output:**
+      ```
+      Loaded image: coconut-project-v2.0.1:latest
      ```
-     Loaded image: coconut-project-v2.0.1:latest
-     ```
-3. **Start a Docker Container**:
+4. **Start a Docker Container**:
    ```shell
    docker run -it coconut-project:v2.0.1
    ```
-4. **Navigate to the Build Directory**:
+5. **Navigate to the Build Directory**:
    ```shell
    cd build
    ```
-5. **Configure the Project with CMake**:
+6. **Configure the Project with CMake**:
    ```shell
    cmake ..
    ```
-6. **Compile and Build the Target**: for Robot example in Listings 1,2,3 in the paper
+7. **Compile and Build the Target**: for Robot example in Listings 1,2,3 in the paper
    ```shell
    cmake --build . --target robot
    ```
@@ -48,7 +49,7 @@ Moreover, this artefact includes a comparative evaluation, benchmarking Coconut'
    ```
    [100%] Built target robot
    ```
-7. **Run the Executable**:
+8. **Run the Executable**:
    ```shell
    ./robot
    ```
@@ -59,7 +60,7 @@ Moreover, this artefact includes a comparative evaluation, benchmarking Coconut'
    Object loaded. Moving to unload...
    Task complete. Returning to Idle...
    ```
-8. **Compile and Build the Target**: for Robot example in Listings 4,5 in the paper
+9. **Compile and Build the Target**: for Robot example in Listings 4,5 in the paper
 
 ```shell
    cmake --build . --target robotOP
