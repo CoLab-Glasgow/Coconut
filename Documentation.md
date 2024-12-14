@@ -25,7 +25,7 @@ Moreover, this artefact includes a comparative evaluation, benchmarking Coconut'
 
      ```
      **Expected output:**
-     ```
+     ```shell
     Loaded image: coconut-project-v2.0.1:latest
      ```
 3. **Start a Docker Container**:
