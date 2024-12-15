@@ -1,7 +1,7 @@
 # Minimum CMake version
 cmake_minimum_required(VERSION 3.10)
 
-# Project name and language
+
 project(CoconutPluginProject LANGUAGES CXX)
 
 # Set C++ standard
@@ -9,16 +9,16 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Specify GCC 13 explicitly
+
 find_program(GCC_COMPILER g++-13)
 if(NOT GCC_COMPILER)
     message(FATAL_ERROR "GCC 13 (g++-13) not found. Please install GCC 13 and make it accessible.")
 endif()
 
-# Override the compiler to use GCC 13
+
 set(CMAKE_CXX_COMPILER ${GCC_COMPILER})
 
-# Debug: Print GCC plugin directory
+
 execute_process(COMMAND ${GCC_COMPILER} -print-file-name=plugin
                 OUTPUT_VARIABLE GCC_PLUGIN_DIR
                 OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -32,7 +32,7 @@ include_directories(
     ${GCC_PLUGIN_DIR}/include/gcc/c-family
 )
 
-# Suppress all warnings
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w")
 
 # Optimization flags based on build type
