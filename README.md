@@ -16,46 +16,61 @@ This Typestate Library is a tool that enables C++ users to define a protocol for
 git clone https://github.com/CoLab-Glasgow/Coconut.git
 
 ```
-### Dependencies ###
 
-- Boost library Version 1.81.0
-``` 
-git clone --branch boost-1.81.0 --depth 1 https://github.com/boostorg/boost.git
 
-```
+#### Install Dependencies
+- Boost Library (Version 1.81.0):
+  ```shell
+  git clone --branch boost-1.81.0 --depth 1 https://github.com/boostorg/boost.git
+  ```
 
-### Build the Coconut Library ##
-- Navigate to the "Coconut" directory using the command:
 
-```
-cd Coconut
+### Environment Options
+You can run these commands and compile the project using:
+- **WSL (Windows Subsystem for Linux)**: Provides a Linux-like environment on Windows. https://learn.microsoft.com/en-us/windows/wsl/install 
+- **Cygwin**: Offers a POSIX-compatible environment for Windows. https://www.cygwin.com/install.html 
 
-```
-- Once inside the "Coconut" directory, run the following commands to build the library:
-  
 
-```
-mkdir build
-cd build 
-cmake ... 
-```
-#### Environment of the build ###
+### GCC and Related Tools
+The project uses **GCC 13**, which includes:
+- `gcc-13` - GNU Compiler Collection (C Compiler)
+- `g++-13` - GNU Compiler Collection (C++ Compiler)
+- `gcc-13-plugin-dev` - Plugin Development Tools for GCC 13
 
-Windows 11 Pro, using Visual Studio Code as the IDE (Version: 1.87.2), with GCC version 13.2.0 (MinGW-W64 x86_64-msvcrt-posix-she)
+inside wsl or Cygwin
 
-#### To compile and configure examples with cmake ####
-
-for one case study use this command: 
- ``` 
-cmake --build . --target Client1
+```shell
+sudo apt update
+sudo apt install -y gcc-13 g++-13 gcc-13-plugin-dev
 
 ```
-### To run examples ###
 
-for one case study use this command: 
- ``` 
-./Client1
+
+#### Build the Coconut Library
+1. **Navigate to the "Coconut" directory**:
+   ```shell
+   cd Coconut
+   ```
+2. **Create a build directory and configure the project**:
+   ```shell
+   mkdir build
+   cd build
+   cmake ..
+   ```
+
+
+#### Compile and Configure Examples
+To build a specific case study:
+```shell
+cmake --build . --target robot
 ```
- 
+
+#### Run Examples
+To execute a specific case study:
+```shell
+./robot
+```
+
+
 
 
