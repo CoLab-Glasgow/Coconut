@@ -9,13 +9,17 @@ This Typestate Library is a tool that enables C++ users to define a protocol for
 
 - On Linux, you can download it from [here.](https://learn.microsoft.com/en-us/cpp/linux/download-install-and-setup-the-linux-development-workload?view=msvc-170) 
 
+
   
+### Download Coconut file from here to try it with docker and experiment ### (https://doi.org/10.5281/zenodo.14478714)
+
 ### Download Cocount ###
 
 ```
 git clone https://github.com/CoLab-Glasgow/Coconut.git
 
 ```
+
 
 
 #### Install Dependencies
