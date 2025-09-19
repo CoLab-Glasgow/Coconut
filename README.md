@@ -1,5 +1,5 @@
 # Coconut tool 
-Coconut is a C++ library for specifying **object protocols** (typestates) and **statically validating** that your code follows them.
+Coconut is a C++ software tool for specifying **object protocols** (typestates) and **statically validating** that your code follows them.
 
 - Enforce valid state transitions at **compile time**
 - Integrates with **GCC’s middle-end** via **GIMPLE IR**
