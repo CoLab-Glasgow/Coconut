@@ -27,7 +27,7 @@ git clone https://github.com/CoLab-Glasgow/Coconut.git
 
 ```
 
-
+👉 For full setup and usage instructions, see [Documentation.md](Documentation.md).  
 
 #### Install Dependencies
 - Boost Library (Version 1.81.0):
