@@ -1,6 +1,11 @@
 # Coconut tool 
-This Typestate Library is a tool that enables C++ users to define a protocol for their classes. This tool will significantly facilitate and secure the user’s work by detecting any violations of the protocol that the user specifies for objects.
+Coconut is a C++ library for specifying **object protocols** (typestates) and **statically validating** that your code follows them.
 
+- Enforce valid state transitions at **compile time**
+- Integrates with **GCC’s middle-end** via **GIMPLE IR**
+- Supports **branching**, **recursion**, **aliasing**, **inheritance**
+- Includes **typestate visualisation**
+- Works well for **embedded systems** verification (pre-deployment)
 
 ### Download C++ ###
 - On Windows, you can download it from [here.](https://docs.microsoft.com/en-us/cpp/build/vscpp-step-0-installation?view=msvc-170/ "Install C and C++ support in Visual Studio") 
