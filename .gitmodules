@@ -1,3 +1,6 @@
 [submodule "external/better-enums"]
 	path = external/better-enums
 	url = https://github.com/aantron/better-enums.git
+[submodule "external/mqtt_cpp"]
+	path = external/mqtt_cpp
+	url = https://github.com/redboltz/mqtt_cpp.git
